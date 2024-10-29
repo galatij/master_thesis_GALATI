@@ -1,6 +1,10 @@
 % Compute the step length with the three point parabolic model.
 function [step,iarm,xp,fp,armflag] = armijo(direction,x,f0,f,maxarm,printflag)
-
+    
+    fileID = fopen("output.txt","a");
+    if (fileID == -1)
+        error("Cannot open the file");
+    end
     sigma1 = 0.5;
     alpha = 1.e-4;
     armflag = 0;
@@ -43,16 +47,19 @@ function [step,iarm,xp,fp,armflag] = armijo(direction,x,f0,f,maxarm,printflag)
         if (iarm > maxarm)
             if (printflag)
                 fprintf('*** Armijo failure, too many reductions ***\n');
+                fprintf(fileID,'*** Armijo failure, too many reductions ***\n');
             end
             armflag = 1;
             xp = xt;
+            fclose(fileID);
             return;
         end
         %fprintf('Armijo reduction: %e\n', lambda);
+        fprintf(fileID,' ----    Armijo reduction: %e\n', lambda);
     end
     xp = xt;
     fp = ft;
-
+    fclose(fileID);
     % end of line search
 end
 
@@ -101,5 +108,4 @@ function lambdap = parab3p(lambdac, lambdam, ff0, ffc, ffm)
     if (lambdap > sigma1*lambdac)
         lambdap = sigma1*lambdac;
     end
-
 end

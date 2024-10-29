@@ -3,7 +3,10 @@ function [sol_u, sol_l, nplas, tplas, convNRvec, convFlag, C, ittot] = ...
                 ndir, dir, dirval, actSetItMax, noConvItMax, itmax_NR, tol_NR, ...
                 cohes, phi, tol_sig, tol_duNc, tol_duT, iter0, ngauss, coord, topol, ...
                 volumes, edgeData, f2e, E, nu)
-
+    fileID = fopen("output.txt","a");
+    if (fileID == -1)
+        error("Cannot open the file");
+    end
     maxarm = 3;
     printflag = true;
 
@@ -49,6 +52,7 @@ function [sol_u, sol_l, nplas, tplas, convNRvec, convFlag, C, ittot] = ...
         convNRvec(ittot-iter+1:ittot) = resvec;
 
         fprintf('%6i %15.6e (%5i %5i)\n', iter0+ittot, rnorm, sum(nplas), sum(tplas));
+        fprintf(fileID, '%6i %15.6e (%5i %5i)\n', iter0+ittot, rnorm, sum(nplas), sum(tplas));
 
         if (~skipActiveSet)
             [nplas,tplas,tplasnew,checkActiveSet,skipActiveSet,itA,statusL] = ...
@@ -69,6 +73,7 @@ function [sol_u, sol_l, nplas, tplas, convNRvec, convFlag, C, ittot] = ...
             tplas = nplas;
             trialStep = trialStep + 1;
             fprintf(' ------------- elastic step -------------\n');
+            fprintf(fileID, ' ------------- elastic step -------------\n');
             C = setStabilizationMat(Corig, nplas, tplas);
         else
             exitFlag = true;
@@ -94,7 +99,7 @@ function [sol_u, sol_l, nplas, tplas, convNRvec, convFlag, C, ittot] = ...
     % --------------------------------------------------------------
     % JUST FOR OUTPUT
     % --------------------------------------------------------------
-
+    fclose(fileID);
 end
 
 function [res,J] = cpt_residual(K,B,Bt,C,rhs,ndir,dir,state0,sol0,indU,indL,areaiR, ...
@@ -256,7 +261,10 @@ end
 
 function [nplas,tplas,tplasnew,checkActiveSet,skipActiveSet,itA,statusL] = ...
     activeSet(Bt,indU,indL,nplas,tplas,itA,statusL,areaiR,cohes,phi,tol_duNc,tol_sig,conv,sol)
-
+    fileID = fopen("output.txt","a");
+    if (fileID == -1)
+        error("Cannot open the file");
+    end
     alpha = 0.05;
     skipActiveSet = false;
 
@@ -312,6 +320,7 @@ function [nplas,tplas,tplasnew,checkActiveSet,skipActiveSet,itA,statusL] = ...
     if (conv)
         % Maximum allowed number of oscillations
         if (sum(ismember(statusL(:,1:itA-1)', lambda_fix', 'rows')) >= 2)
+            fprintf(fileID, "       *** Active set is oscillating\n *** ");
             checkActiveSet = true;
             skipActiveSet = true;
             % Restore current (converged) solution
@@ -319,5 +328,6 @@ function [nplas,tplas,tplasnew,checkActiveSet,skipActiveSet,itA,statusL] = ...
             tplas = lambda_fix0(ni+(1:ni));
         end
     end
+    fclose(fileID);
 
 end

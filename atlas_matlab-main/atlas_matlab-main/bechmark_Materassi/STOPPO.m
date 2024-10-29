@@ -3,5 +3,5 @@
 %K = M;
 %save('YYY','K','z','rrr');
 %error('yyy');
-save('YYYY');
-error;
+%save('YYYY');
+%error;

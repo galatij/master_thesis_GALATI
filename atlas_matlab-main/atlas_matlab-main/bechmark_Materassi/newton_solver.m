@@ -1,11 +1,16 @@
 function [sol,iter,rnorm,conv,resvec,res] = newton_solver(f,x0,itmax,tol,maxarm,printflag,iter0)
-
+    
     rnorm = 1.0;
     iter = 0;
     conv = false;
     sol = x0;
     resvec = zeros(itmax,1);
     armflag = 0;
+    
+    fileID = fopen("output.txt","a");
+    if (fileID == -1)
+        error("Cannot open the file");
+    end
 
     while (~conv)
         iter = iter + 1;
@@ -30,6 +35,7 @@ function [sol,iter,rnorm,conv,resvec,res] = newton_solver(f,x0,itmax,tol,maxarm,
         end
         resvec(iter) = rnorm/rnorm0;
         fprintf(' --- %2i %15.6e\n',iter,rnorm/rnorm0);
+        fprintf(fileID,' --- %2i %15.6e\n',iter,rnorm/rnorm0);
 
         conv = (rnorm < tol(1)*rnorm0+tol(2)) || iter >= itmax || armflag ~= 0;
     end
@@ -38,5 +44,6 @@ function [sol,iter,rnorm,conv,resvec,res] = newton_solver(f,x0,itmax,tol,maxarm,
     rnorm = rnorm/rnorm0;
     resvec = resvec(1:iter);
     res = res/rnorm0;
-
+    
+    fclose(fileID);
 end

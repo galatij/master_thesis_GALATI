@@ -4,6 +4,11 @@ function [itGlo, convAll] = ...
               maxBackStep, tol_sig, tol_duNc, tol_duT, SAVEVTK, fac, ngauss, coord, ne, ...
               topol, E, nu, volumes, matID, interf, edgeData, f2e, nrm_fault)
 
+    fileID = fopen("output.txt","a");
+    if (fileID == -1)
+        error("Cannot open the file");
+    end
+    
     indU = (1:3*nn);
     indL = (3*nn) + (1:3*ni);
     ntot = 3*nn + 3*ni;
@@ -39,7 +44,7 @@ function [itGlo, convAll] = ...
         while (tcurr < tend)
 
             fprintf('t0 = %15.6e | t = %15.6e | dt = %15.6e\n', tcurr, tcurr+dt, dt);
-
+            fprintf(fileID, 't0 = %15.6e | t = %15.6e | dt = %15.6e\n', tcurr, tcurr+dt, dt);
             tcurr = tcurr + dt;
 
             facU = loads(indU,iStep) + (loads(indU,iStep+1)-loads(indU,iStep))*(tcurr-tstart)/dt0;
@@ -93,6 +98,8 @@ function [itGlo, convAll] = ...
 
             if (nBackStep > maxBackStep)
                 fprintf('Too many back steps!\n');
+                fprintf(fileID, 'Too many back steps!\n');
+                fclose(fileID);
                 return
             end
 
@@ -173,5 +180,5 @@ function [itGlo, convAll] = ...
                       cellScalarFields2D, cellFieldNames2D);
         end
     end
-
+    fclose(fileID);
 end

@@ -5,6 +5,11 @@ clear;
 % NOTE
 % ur = uB - uT
 % normal: from T to B
+filename = "output.txt";
+fileID = fopen(filename, "w");
+if (fileID == -1)
+    error("Cannot open the file");
+end
 
 % Number of Gauss points
 ngauss = 2;
@@ -76,15 +81,18 @@ xmax = max(coordOrig(:,1));
 zmax = max(coordOrig(:,3));
 ID = 1 : nf;
 ID = ID(:);
+
+neu1 = -1;
+neu2 = -0.01;
 bound = repmat(struct('nf', 1, 'isbound', 1, 'ID', 1, 'values', 1), 2, 1);
 bound(1).isbound = (bar_fac(:,3) == zmax & bar_fac(:,1) > 0.0);
 bound(1).ID = ID(bound(1).isbound);
 bound(1).nf = length(bound(1).ID);
-bound(1).values = zeros(bound(1).nf,3) + [0,0,-3];
+bound(1).values = zeros(bound(1).nf,3) + [0,0,neu1];
 bound(2).isbound = (bar_fac(:,1) == xmax);
 bound(2).ID = ID(bound(2).isbound);
 bound(2).nf = length(bound(2).ID);
-bound(2).values = zeros(bound(2).nf,3) + [-2,0,0];
+bound(2).values = zeros(bound(2).nf,3) + [neu2,0,0];
 
 E = zeros(ne,1) + E0;
 
@@ -129,9 +137,27 @@ loads(indU(3:3:3*nn),:) = repmat(loadsScalZ',nn,1);
 loads(indL,:) = 1.0;
 bounds = ones(length(steps),1);
 
+fprintf(fileID, "===================PARAMETERS==================\n");
+fprintf(fileID,"E0 = %i\n", E0);
+fprintf(fileID,"nu = %.2f\n", nu);
+fprintf(fileID, "[nx, ny, nz] = [%i, %i, %i]\n", nx, ny, nz);
+fprintf(fileID, "[Lx, Ly, Lz] = [%i, %i, %i]\n", Lx, Ly, Lz);
+fprintf(fileID, "==================NEUMANN DATA==================\n");
+fprintf(fileID, "neu1 = [0,0, %.2f]\n", neu1);
+fprintf(fileID, "neu2= [%.2f,0, 0]\n", neu2);
+fprintf(fileID, "\n====================SIMULATION==================\n")
+fclose(fileID);
+
 fac = 1.e2;
 [itGlo, convAll] = ...
     simulator(steps, loads, bounds, nn, ni, K, Bt, rhs, interfData, areaiR, state0, ...
               ndir, dir, dirval, cohes, phi, actSetItMax, noConvItMax, itmax_NR, tol_NR, ...
               maxBackStep, tol_sig, tol_duNc, tol_duT, SAVEVTK, fac, ngauss, coord, ne, ...
               topol, E, nu, volumes, matID, interf, edgeData, f2e, nrm_fault);
+
+iter = 1:length(convAll);
+figure()
+plot(iter, convAll);
+title("Convergence History")
+xlabel("it")
+ylabel("res")
