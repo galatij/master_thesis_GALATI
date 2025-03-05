@@ -90,10 +90,12 @@ indU = (1:3*nn);
 % indL = (1:3*ni);              %%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Assemble the system
-% TODO: add contribution of \theta B at the interface elements
-[K,rhs,E,volumes] = assemble_K_rhs(ngauss,nn,coord,ne,topol,E,nu,e2f,faces,faceData,bound,...
-                                   interf2e, interfData, Theta, gamma);
-
+% DONE: add contribution of \theta B at the interface elements
+% TODO: multply by rotation matrix ???
+%[K,rhs,E,volumes] = assemble_K_rhs(ngauss,nn,coord,ne,topol,E,nu,e2f,faces,faceData,bound,...
+%                                    interf2e, interfData, Theta, gamma);
+[B] = assemble_B(ngauss,coord,ne,topol,E0,nu, ...
+                 interf, interfData, gamma);
 
 nrm_fault = [1;0;0];
 %fprintf('Mesh computed\n');
@@ -105,7 +107,7 @@ cohes = 0.0;
 phi = 30.0/180.0*pi;
 
 sol_u = zeros(3*nn,1);
-% state0 = sol_u; 
+state0 = sol_u; 
 areai = zeros(ni,1);
 for i = 1 : ni
     areai(i) = interfData(i).area;
@@ -128,7 +130,7 @@ bounds = ones(length(steps),1);         %%% bounds is an array of ones!! differe
 
 fac = 1.e2;
 [itGlo, convAll] = ...
-    simulator(steps, loads, bounds, nn, ni, K, rhs, gamma, Theta, interfData, areaiR, ... % state0 ...
+    simulator(steps, loads, bounds, nn, ni, K, B, rhs, gamma, Theta, interfData, areaiR, state0, ...
               ndir, dir, dirval, cohes, phi, noConvItMax, itmax_NR, tol_NR, ...
               maxBackStep, tol_sig, tol_duNc, tol_duT, SAVEVTK, fac, ngauss, coord, ne, ...
               topol, E, nu, volumes, matID, interf, edgeData, f2e, nrm_fault);
