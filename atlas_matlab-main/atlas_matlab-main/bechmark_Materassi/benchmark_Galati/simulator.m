@@ -4,6 +4,7 @@ function [itGlo, convAll] = ...
               maxBackStep, tol_sig, tol_duNc, tol_duT, SAVEVTK, fac, ngauss, coord, ne, ...
               topol, E, nu, volumes, matID, interf, edgeData, f2e, nrm_fault)
 
+
     indU = (1:3*nn);
     %indL = (3*nn) + (1:3*ni);
     %ntot = 3*nn + 3*ni;

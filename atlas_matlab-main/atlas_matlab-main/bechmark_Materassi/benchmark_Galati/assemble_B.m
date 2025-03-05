@@ -45,9 +45,6 @@ function [B] = assemble_B(ngauss,coord,ne,topol,E0,nu, ...
         [II,JJ] = meshgrid(bot_dof);
         Blist(k:k+143,:) = [JJ(:),II(:),Gloc_bottom(:)];
         k = k + 144;
-
-        % Map on the corresponding element
-
         
 
     end

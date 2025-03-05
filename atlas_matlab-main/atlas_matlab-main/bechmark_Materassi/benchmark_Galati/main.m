@@ -128,6 +128,7 @@ loads(indU(3:3:3*nn),:) = repmat(loadsScalZ',nn,1);
 % loads(indL,:) = 1.0;            %%%%%%%%%%%%%%%%%%%%%%%
 bounds = ones(length(steps),1);         %%% bounds is an array of ones!! different from bound, used to buid the rhs
 
+
 fac = 1.e2;
 [itGlo, convAll] = ...
     simulator(steps, loads, bounds, nn, ni, K, B, rhs, gamma, Theta, interfData, areaiR, state0, ...
