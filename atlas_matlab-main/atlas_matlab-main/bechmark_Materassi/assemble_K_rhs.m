@@ -57,8 +57,8 @@ function [K,rhs,E,volumes] = assemble_K_rhs(ngauss,nn,coord,ne,topol,E0,nu,e2f,f
                     val = val(:);
                     area = faceData(i).area(kf);
                     int_area = cpt_area_int(ngauss, coord, topol, i, loc_nodes);
-                    jjf = 3*(loc_nodes-1)+v3;
-                    jjf = jjf(:);
+                    jjf = 3*(loc_nodes-1)+v3;            % matrix
+                    jjf = jjf(:);                        % hstack
                     rhs0 = val*int_area;
                     rhs(jjf) = rhs(jjf) + rhs0(:);
                 end

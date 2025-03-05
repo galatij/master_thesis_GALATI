@@ -1,5 +1,6 @@
 function [int_area] = cpt_area_int(ngauss, coord, topol, elem, list)
-
+    % list has the 4 global indices defining the face
+    % coordinates of the top element (cell) (8x3 matrix)
     loc_coo = coord(topol(elem,:),:);
 
     csi   = [-1;+1;+1;-1;-1;+1;+1;-1];
@@ -10,6 +11,7 @@ function [int_area] = cpt_area_int(ngauss, coord, topol, elem, list)
     Nloc = cpt_shape_2D(loc_coo,csi,eta,theta);
     X = ismember(Nloc*loc_coo,coord(list,:),'row');
     id = 0;
+    % Loop over the 3 ref. coords to determine the constant one
     for i = 1 : 3
         if (std(xi(X,i)) == 0)
             xi_id = i;

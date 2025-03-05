@@ -44,7 +44,7 @@ function [itGlo, convAll] = ...
 
             facU = loads(indU,iStep) + (loads(indU,iStep+1)-loads(indU,iStep))*(tcurr-tstart)/dt0;
             facL = loads(indL,iStep) + (loads(indL,iStep+1)-loads(indL,iStep))*(tcurr-tstart)/dt0;
-            facDir = bounds(iStep) + (bounds(iStep+1)-bounds(iStep))*(tcurr-tstart)/dt0;
+            facDir = bounds(iStep) + (bounds(iStep+1)-bounds(iStep))*(tcurr-tstart)/dt0;            % ????????
             rhsUcurr = facU.*rhs(indU);
             rhsLcurr = facL.*rhs(indL);
             dirvalcurr = facDir*dirval;
@@ -62,6 +62,7 @@ function [itGlo, convAll] = ...
                             cohes, phi, tol_sig, tol_duNc, tol_duT, itGlo, ngauss, coord, topol, ...
                             volumes, edgeData, f2e, E, nu);
 
+            % backstep algo
             if (~convFlag)
                 update = false;
                 tcurr = tcurr - dt;
@@ -75,13 +76,14 @@ function [itGlo, convAll] = ...
                 end
                 dtcut = false;
             end
-
+            
+            % advance in time
             if (tcurr + dt > tend)
                 dt = tend - tcurr;
             end
 
-            if (update)
-                nplas0 = nplas;
+            if (update)     % update = true only if solve_NL_CM converged
+                nplas0 = nplas;     % nplas <--> open
                 tplas0 = tplas;
                 itGlo = itGlo + iter;
 

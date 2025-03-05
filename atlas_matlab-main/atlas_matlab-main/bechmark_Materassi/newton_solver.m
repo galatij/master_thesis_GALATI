@@ -15,7 +15,7 @@ function [sol,iter,rnorm,conv,resvec,res] = newton_solver(f,x0,itmax,tol,maxarm,
         % Solve
         x = - direct_solver(M, res);
         %@@@@@@@@@@@@@@@@@@@
-        STOPPO
+        %STOPPO
         %@@@@@@@@@@@@@@@@@@@
 
         if (iter > 1)

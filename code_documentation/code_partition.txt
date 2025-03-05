@@ -1,0 +1,32 @@
+PREPROCESS:
+- cpt_mesh
+- cut_fault			XX
+- face_manager
+- edge_manager
+- cpt_elas_mat
+- init_lam			P
+
+ASSEMBLE:
+- gausspoints
+- cpt_shape			P	
+- cpt_area_int			P
+- assemble_K_rhs
+- assemble_Bt_rhs
+- assemble_global		P
+
+SOLVER:
+- simulator			XX
+- solve_NL_CM			XX
+- newton_solver			XX
+- direct_solver			
+- setCouplingMat
+- setStabilizationMat
+- cpt_finVol_stab
+- cpt_global_stab
+- cpt_shape2D			P
+- cpt_stress
+- armijo
+- DirBC
+
+- write_vtk
+- compress_mat			XX

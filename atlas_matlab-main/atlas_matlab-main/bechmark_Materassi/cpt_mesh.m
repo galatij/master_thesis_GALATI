@@ -1,7 +1,7 @@
 function [nn,coord,coordOrig,ne,topol,ni,interf,interf2e,ndir,dir,dirval,dx,dy,dz,matID] = ...
     cpt_mesh(nx,ny,nz,Lx,Ly,Lz)
 
-    nnx = 2*(nx+1);
+    nnx = 2*(nx+1);     % +1 due to node duplication at fault
     nny = ny+1;
     nnz = nz+1;
     nn = nnx*nny*nnz;
@@ -26,7 +26,7 @@ function [nn,coord,coordOrig,ne,topol,ni,interf,interf2e,ndir,dir,dirval,dx,dy,d
                 coord(kk,3) = z;
                 x = x + dx;
                 if (i == nx+1)
-                    x = x - dx;
+                    x = x - dx; % same coord for duplicate nodes
                 end
             end
             y = y + dy;

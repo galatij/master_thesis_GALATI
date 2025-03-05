@@ -36,12 +36,13 @@ function [N,detJ] = cpt_shape_2D(coord,csi,eta,theta,varargin)
         dN(3,6) = +(1.0+csi)*(1.0-eta)/8.0;
         dN(3,7) = +(1.0+csi)*(1.0+eta)/8.0;
         dN(3,8) = +(1.0-csi)*(1.0+eta)/8.0;
-
-        id = varargin{1};
-        I = 1:3;
-        dN = dN(I~=id,:);
-        J = dN*coord;
-        detJ = norm(cross(J(1,:),J(2,:)));
+        if ~isempty(varargin)
+            id = varargin{1};
+            I = 1:3;
+            dN = dN(I~=id,:);
+            J = dN*coord;
+            detJ = norm(cross(J(1,:),J(2,:)));
+        end
     end
 
 end

@@ -31,9 +31,9 @@ SAVEVTK = true;
 %[nn,coord,coordOrig,ne,topol,ni,interf,interf2e,ndir,dir,dirval,dx,dy,dz,matID] = ...
 %   read_mesh(fileName);
 
-nx = 1;
-ny = 8;
-nz = 8;
+nx = 8;
+ny = 16;
+nz = 16;
 Lx = 1;
 Ly = 8;
 Lz = 8;
@@ -77,14 +77,14 @@ zmax = max(coordOrig(:,3));
 ID = 1 : nf;
 ID = ID(:);
 bound = repmat(struct('nf', 1, 'isbound', 1, 'ID', 1, 'values', 1), 2, 1);
-bound(1).isbound = (bar_fac(:,3) == zmax & bar_fac(:,1) > 0.0);
-bound(1).ID = ID(bound(1).isbound);
+bound(1).isbound = (bar_fac(:,3) == zmax & bar_fac(:,1) > 0.0); % top face, positive x
+bound(1).ID = ID(bound(1).isbound);                             % IDs of faces to impose stress bc
 bound(1).nf = length(bound(1).ID);
-bound(1).values = zeros(bound(1).nf,3) + [0,0,-3];
-bound(2).isbound = (bar_fac(:,1) == xmax);
+bound(1).values = zeros(bound(1).nf,3) + [0,0,-3];              % impossition of stress along z
+bound(2).isbound = (bar_fac(:,1) == xmax);                      % right face
 bound(2).ID = ID(bound(2).isbound);
 bound(2).nf = length(bound(2).ID);
-bound(2).values = zeros(bound(2).nf,3) + [-2,0,0];
+bound(2).values = zeros(bound(2).nf,3) + [-2,0,0];              % imposition of stress along x (compressive)
 
 E = zeros(ne,1) + E0;
 
@@ -127,7 +127,7 @@ loads(indU(1:3:3*nn),:) = repmat(loadsScal',nn,1);
 loads(indU(2:3:3*nn),:) = repmat(loadsScal',nn,1);
 loads(indU(3:3:3*nn),:) = repmat(loadsScalZ',nn,1);
 loads(indL,:) = 1.0;
-bounds = ones(length(steps),1);
+bounds = ones(length(steps),1);         %%% bounds is an array of ones!! different from bound, used to buid the rhs
 
 fac = 1.e2;
 [itGlo, convAll] = ...

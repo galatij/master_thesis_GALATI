@@ -17,7 +17,7 @@ function [sol_u, sol_l, nplas, tplas, convNRvec, convFlag, C, ittot] = ...
 
     C = setStabilizationMat(Corig, nplas, tplas);
 
-    sol = sol0;
+    sol = sol0;     % previous time step
     sol(dir(1:ndir)) = dirval(1:ndir);
     convNR = false;
     exitFlag = false;
@@ -44,7 +44,7 @@ function [sol_u, sol_l, nplas, tplas, convNRvec, convFlag, C, ittot] = ...
                                    nplas,tplas,tplasnew,cohes,phi,tol_duT,interfData,iter,x);
 
         [solNew,iter,rnorm,convNR,resvec] = newton_solver(f,sol,itmax_NR,tol_NR,maxarm,printflag,ittot);
-		STOPPO
+		%STOPPO
         ittot = ittot + iter;
         convNRvec(ittot-iter+1:ittot) = resvec;
 
@@ -66,7 +66,7 @@ function [sol_u, sol_l, nplas, tplas, convNRvec, convFlag, C, ittot] = ...
         elseif (trialStep == 0)
             % elasticStep
             exitFlag = false;
-            tplas = nplas;
+            tplas = nplas;  % either static (nplas=tplas=false) or open(nplas=tplas=true)
             trialStep = trialStep + 1;
             fprintf(' ------------- elastic step -------------\n');
             C = setStabilizationMat(Corig, nplas, tplas);
@@ -111,21 +111,22 @@ function [res,J] = cpt_residual(K,B,Bt,C,rhs,ndir,dir,state0,sol0,indU,indL,area
 
     if (cptJ)
         % Remove constraints for open and sliding elements
-        BtDir = setCouplingMat(Bt, nplas, tplas);
+        BtDir = setCouplingMat(Bt, nplas, tplas);       % only the normal component of lambda on closed interface elements is left
     end
 
     % Previous sliding
-    IDn = 3*((1:ni)-1)+1;
+    IDn = 3*((1:ni)-1)+1;   % 1, 4, 7, ... , (3ni-1) + 1 --> select normal component of lambda
     dsol0 = sol0 - state0;
-    gT0 = Bt*dsol0(indU);
-    gT0(IDn) = 0;
+    gT0 = Bt*dsol0(indU);   
+    gT0(IDn) = 0;           % do not consider the previous sliding for the normal component
 
     Cl0 = C*dsol0(indL);
     Cl0(IDn) = 0;
 
     dsol = sol - state0;
     res_u = (K*dsol(indU) + B*dsol(indL)) - rhs(indU);
-    res_l = (Bt*dsol(indU) - C*dsol(indL) - (gT0 - Cl0)) - rhs(indL);
+    res_l = (Bt*dsol(indU) - C*dsol(indL) - (gT0 - Cl0)) - rhs(indL);   % gt0 - Cl0 = previous residual (tangential part only) 
+    
 
     if (cptJ)
         indE = 0;
@@ -138,16 +139,24 @@ function [res,J] = cpt_residual(K,B,Bt,C,rhs,ndir,dir,state0,sol0,indU,indL,area
         jcolF = zeros(3*ni,1);
         valsF = zeros(3*ni,1);
     end
+    
+%     areai = zeros(ni,1);
+%     for i = 1 : ni
+%         areai(i) = interfData(i).area;
+%     end
+%     areaiR = spdiags(1.0./reshape([areai';areai';areai'],3*ni,1),0,3*ni,3*ni);
 
     % Relative displacements (w/o stabilization effects)
     dulocTot0 = areaiR*(Bt*dsol0(indU));
-    dulocTot = areaiR*(Bt*dsol(indU));
+    dulocTot = areaiR*(Bt*dsol(indU));      % just multiplying each element by its area
     sol_l = sol(indL);
 
     for i = 1 : ni
+        % if open: modify matrix and rhs s.t. lambda = lambda, i.e. no
+        % coupling
         if (nplas(i))
             idof = 3*(i-1)+(1:3);
-            res_l(idof(1)) = interfData(i).area * sol_l(idof(1));
+            res_l(idof(1)) = interfData(i).area * sol_l(idof(1));       
             res_l(idof(2)) = interfData(i).area * sol_l(idof(2));
             res_l(idof(3)) = interfData(i).area * sol_l(idof(3));
             if (cptJ)
@@ -155,10 +164,12 @@ function [res,J] = cpt_residual(K,B,Bt,C,rhs,ndir,dir,state0,sol0,indU,indL,area
                 indF = indF + 3;
                 irowF(indF-2:indF) = idof;
                 jcolF(indF-2:indF) = idof;
-                valsF(indF-2:indF) = interfData(i).area;
+                valsF(indF-2:indF) = interfData(i).area;            % C(i,j) will be 0 for open interfaces --> set F in the jacobian
             end
+        % else if sliding (and not open)
         elseif (tplas(i))
             tlim = cohes - sol_l(3*(i-1)+1)*tan(phi);
+            % ur: increment of du between 2 subsequent time steps
             ur = dulocTot(3*(i-1)+(1:3)) - dulocTot0(3*(i-1)+(1:3));
 
             % Just frictional components
@@ -166,9 +177,9 @@ function [res,J] = cpt_residual(K,B,Bt,C,rhs,ndir,dir,state0,sol0,indU,indL,area
             durnrm = norm(gT);
             idof = 3*(i-1)+(2:3);
 
-            if (~(iter == 1 && tplasnew(i)) && durnrm > tol_duT)
+            if (~(iter == 1 && tplasnew(i)) && durnrm > tol_duT)    
                 if (cptJ)
-                    dt_dur = tlim*(durnrm^2*I2 - gT*gT')/(durnrm^3);
+                    dt_dur = tlim*(durnrm^2*I2 - gT*gT')/(durnrm^3);        %% missing the term: -gT*dt'/norm(gT)^2 ???
                     dt_dur = sparse(dt_dur);
                     Bloc = B(:,idof);
 
@@ -254,6 +265,9 @@ function [res,J] = cpt_residual(K,B,Bt,C,rhs,ndir,dir,state0,sol0,indU,indL,area
 
 end
 
+
+       % Q is duloc(1) negative?
+       
 function [nplas,tplas,tplasnew,checkActiveSet,skipActiveSet,itA,statusL] = ...
     activeSet(Bt,indU,indL,nplas,tplas,itA,statusL,areaiR,cohes,phi,tol_duNc,tol_sig,conv,sol)
 
