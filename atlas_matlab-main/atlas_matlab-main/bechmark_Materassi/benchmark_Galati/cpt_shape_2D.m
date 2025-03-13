@@ -1,5 +1,7 @@
 function [N,detJ] = cpt_shape_2D(coord,csi,eta,theta,varargin)
 
+    % Each coloumn corresponds to a different basis function
+    % Each row corresponds to a different evaluation point (the 8 nodes)
     N = zeros(length(csi),8);
     N(:,1) = (1.0-csi).*(1.0-eta).*(1.0-theta)/8.0;
     N(:,2) = (1.0+csi).*(1.0-eta).*(1.0-theta)/8.0;

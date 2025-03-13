@@ -11,8 +11,8 @@ ngauss = 2;
 % Elastic parameters
 E0 = 25000.e0; % MPa
 nu = 0.25;
-Theta = 0;  % 1 -1
-gamma = 1;  % modift gamma_h
+alpha = 0;  % 1 -1
+gamma = 1.e-5;  % modify gamma_h
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Newton-Raphson parameters
 % ITMAX
@@ -88,14 +88,14 @@ E = zeros(ne,1) + E0;
 
 indU = (1:3*nn);
 % indL = (1:3*ni);              %%%%%%%%%%%%%%%%%%%%%%%%%
-
 % Assemble the system
 % DONE: add contribution of \theta B at the interface elements
 % TODO: multply by rotation matrix ???
-%[K,rhs,E,volumes] = assemble_K_rhs(ngauss,nn,coord,ne,topol,E,nu,e2f,faces,faceData,bound,...
-%                                    interf2e, interfData, Theta, gamma);
+[K,rhs,E,volumes] = assemble_K_rhs(ngauss,nn,coord,ne,topol,E,nu,e2f,faces,faceData,bound);
 [B] = assemble_B(ngauss,coord,ne,topol,E0,nu, ...
                  interf, interfData, gamma);
+[C] = assemble_C(ngauss,coord,ne,topol,E0,nu, ...
+                 interf, interfData, gamma, alpha);
 
 nrm_fault = [1;0;0];
 %fprintf('Mesh computed\n');
@@ -121,7 +121,7 @@ loadsScal(:) = 1;
 loadsScalZ = zeros(length(steps),1);
 loadsScalZ(:) = [0,1,2,3,4,5,4,3,2,1];
 
-loads = zeros(ntot,length(steps));
+loads = zeros(3*nn,length(steps));
 loads(indU(1:3:3*nn),:) = repmat(loadsScal',nn,1);
 loads(indU(2:3:3*nn),:) = repmat(loadsScal',nn,1);
 loads(indU(3:3:3*nn),:) = repmat(loadsScalZ',nn,1);
@@ -131,7 +131,7 @@ bounds = ones(length(steps),1);         %%% bounds is an array of ones!! differe
 
 fac = 1.e2;
 [itGlo, convAll] = ...
-    simulator(steps, loads, bounds, nn, ni, K, B, rhs, gamma, Theta, interfData, areaiR, state0, ...
+    simulator(steps, loads, bounds, nn, ni, K, B, rhs, gamma, alpha, interfData, areaiR, state0, ...
               ndir, dir, dirval, cohes, phi, noConvItMax, itmax_NR, tol_NR, ...
               maxBackStep, tol_sig, tol_duNc, tol_duT, SAVEVTK, fac, ngauss, coord, ne, ...
               topol, E, nu, volumes, matID, interf, edgeData, f2e, nrm_fault);

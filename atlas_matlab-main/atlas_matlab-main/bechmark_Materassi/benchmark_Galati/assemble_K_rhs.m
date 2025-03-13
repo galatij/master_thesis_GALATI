@@ -1,6 +1,5 @@
-function [K,rhs,E,volumes] = assemble_K_rhs(ngauss,nn,coord,ne,topol,E0,nu,e2f,faces,faceData,bound, ...
-                                            interf2e, interfData, Theta, gamma);
-
+function [K,rhs,E,volumes] = assemble_K_rhs(ngauss,nn,coord,ne,topol,E0,nu,e2f,faces,faceData,bound)
+                                  
     [nodes,weights] = gausspoints(ngauss);
 
     if (length(E0) == 1)
@@ -40,6 +39,7 @@ function [K,rhs,E,volumes] = assemble_K_rhs(ngauss,nn,coord,ne,topol,E0,nu,e2f,f
             end
         end
         volumes(i) = vol;
+
         % Body force
         %for j = 1 : 8
         %    rhs0 = -vol/8*(divS(loc_coo(j,1),loc_coo(j,2),loc_coo(j,3)));
@@ -47,50 +47,51 @@ function [K,rhs,E,volumes] = assemble_K_rhs(ngauss,nn,coord,ne,topol,E0,nu,e2f,f
         %    rhsloc(ii) = rhsloc(ii) + rhs0;
         %end
 
+
         % Check if the element is at the interface
-        loc_interf = find(interf2e(:,i));
-        if ~isempty(loc_interf)
-            %% Check if the element is a top or bottom element
-            if (interfData(loc_interf).etop == i)
-                list = interfData(loc_interf).top;
-                normal = interfData(loc_interf).normal;
-            else
-                list = interfData(loc_interf).bottom;
-                normal = interfData(loc_interf).normal;
-            end
-            N = normal*normal';
-            Gloc = cpt_shape_interf(ngauss, coord, topol, i, list, ...
-                                   N, gamma, D);
-%             Kloc = Kloc + Gloc;
-        end
-        
-% 
-%         % Neumann boundary condition
-%         loc_faces = find(f2e(:,i));
-%         for jf = 1 : length(bound)
-%             for kf = 1 : 6
-%                 if (bound(jf).isbound(loc_faces(kf)) == 1)
-%                     loc_nodes = faces(loc_faces(kf),:);
-%                     iif = find(loc_faces(kf)==bound(jf).ID);
-%                     val = bound(jf).values(iif,:);
-%                     val = val(:);
-%                     area = faceData(i).area(kf);
-%                     int_area = cpt_area_int(ngauss, coord, topol, i, loc_nodes);
-%                     jjf = 3*(loc_nodes-1)+v3;            % matrix
-%                     jjf = jjf(:);                        % hstack
-%                     rhs0 = val*int_area;
-%                     rhs(jjf) = rhs(jjf) + rhs0(:);
-%                 end
+%         loc_interf = find(interf2e(:,i));
+%         if ~isempty(loc_interf)
+%             %% Check if the element is a top or bottom element
+%             if (interfData(loc_interf).etop == i)
+%                 list = interfData(loc_interf).top;
+%                 normal = interfData(loc_interf).normal;
+%             else
+%                 list = interfData(loc_interf).bottom;
+%                 normal = interfData(loc_interf).normal;
 %             end
+%             N = normal*normal';
+%             Gloc = cpt_shape_interf(ngauss, coord, topol, i, list, ...
+%                                    N, gamma, D);
+%             Kloc = Kloc + Gloc;
 %         end
-% 
-%         % Global assembly
-%         loc_dof = 3*(loc_nod-1)+v3;
-%         loc_dof = loc_dof(:);
-%         [II,JJ] = meshgrid(loc_dof);
-%         Klist(k:k+575,:) = [JJ(:),II(:),Kloc(:)];
-%         k = k + 576;
-%         rhs(loc_dof) = rhs(loc_dof) + rhsloc;
+        
+
+        % Neumann boundary condition
+        loc_faces = find(f2e(:,i));
+        for jf = 1 : length(bound)
+            for kf = 1 : 6
+                if (bound(jf).isbound(loc_faces(kf)) == 1)
+                    loc_nodes = faces(loc_faces(kf),:);
+                    iif = find(loc_faces(kf)==bound(jf).ID);
+                    val = bound(jf).values(iif,:);
+                    val = val(:);
+                    area = faceData(i).area(kf);
+                    int_area = cpt_area_int(ngauss, coord, topol, i, loc_nodes);
+                    jjf = 3*(loc_nodes-1)+v3;            % matrix
+                    jjf = jjf(:);                        % hstack
+                    rhs0 = val*int_area;
+                    rhs(jjf) = rhs(jjf) + rhs0(:);
+                end
+            end
+        end
+
+        % Global assembly
+        loc_dof = 3*(loc_nod-1)+v3;
+        loc_dof = loc_dof(:);
+        [II,JJ] = meshgrid(loc_dof);
+        Klist(k:k+575,:) = [JJ(:),II(:),Kloc(:)];
+        k = k + 576;
+        rhs(loc_dof) = rhs(loc_dof) + rhsloc;
     end
 
     K = sparse(Klist(:,1),Klist(:,2),Klist(:,3),3*nn,3*nn,size(Klist,1));
