@@ -1,11 +1,6 @@
-function [B] = assemble_B(ngauss,coord,ne,topol,E0,nu, ...
+function [B] = assemble_B(ngauss,coord,topol,E,nu, ...
                           interf, interfData, gamma)
     
-    if (length(E0) == 1)
-        E = E0*ones(ne,1);
-    else
-        E = E0;
-    end
     % With numerical integration of the basis functions restricted on the face
 
     ni = size(interf,1);
@@ -40,7 +35,7 @@ function [B] = assemble_B(ngauss,coord,ne,topol,E0,nu, ...
             normal, gamma, D); % 12*12
         % TODO: rotate to map on the correct side
 
-        bot_dof = 3*(top_nod-1)+v3;
+        bot_dof = 3*(bot_nod-1)+v3;
         bot_dof = bot_dof(:);
         [II,JJ] = meshgrid(bot_dof);
         Blist(k:k+143,:) = [JJ(:),II(:),Gloc_bottom(:)];

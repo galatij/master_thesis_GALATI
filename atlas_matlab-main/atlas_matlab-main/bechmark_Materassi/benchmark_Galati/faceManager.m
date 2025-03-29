@@ -1,5 +1,5 @@
 function [nf, faces, faceData, e2f, areaf, interfData] = ...
-    faceManager(ne, topol, ni, interf, coord, interf2e, bar_ele);
+    faceManager(ne, topol, ni, interf, coord, interf2e, bar_ele)
 
     e2i = interf2e';
     coordT = coord';
@@ -60,7 +60,7 @@ function [nf, faces, faceData, e2f, areaf, interfData] = ...
             faceData(elem(j)).list = jj(:);
         end
     end
-
+    
     interfData = repmat(struct('top', zeros(4,1), 'bottom', zeros(4,1), 'etop', 1, 'ebottom', 1, ...
         'area', 1, 'normal', zeros(3,1), 'bar', zeros(3,1), 'normEdges', zeros(4,3)), ni, 1);
     for i = 1 : ni
@@ -106,6 +106,7 @@ function [nf, faces, faceData, e2f, areaf, interfData] = ...
         interfData(i).R = Q * diag(D);
         % Save the barycenter
         interfData(i).bar = loc_bar;
+      
     end
 
 end

@@ -10,10 +10,10 @@ function [sol,iter,rnorm,conv,resvec,res] = newton_solver(f,x0,itmax,tol,maxarm,
     while (~conv)
         iter = iter + 1;
 
-        [res,M] = f(sol,iter);
+        [res,J] = f(sol,iter);
 
         % Solve
-        x = - direct_solver(M, res);
+        x = - direct_solver(J, rJs);
         %@@@@@@@@@@@@@@@@@@@
         %STOPPO
         %@@@@@@@@@@@@@@@@@@@

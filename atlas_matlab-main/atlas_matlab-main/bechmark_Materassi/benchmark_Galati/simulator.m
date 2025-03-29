@@ -1,13 +1,12 @@
 function [itGlo, convAll] = ...
-    simulator(steps, loads, bounds, nn, ni, K, B, rhs, gamma, Theta, interfData, areaiR, state0, ...
+    simulator(steps, loads, bounds, nn, ni, K, B, rhs, gamma, alpha, interfData, areaiR, state0, ...
               ndir, dir, dirval, cohes, phi, noConvItMax, itmax_NR, tol_NR, ...
-              maxBackStep, tol_sig, tol_duNc, tol_duT, SAVEVTK, fac, ngauss, coord, ne, ...
-              topol, E, nu, volumes, matID, interf, edgeData, f2e, nrm_fault)
+              maxBackStep, tol_sig, tol_duNc, tol_duT, tol_P, SAVEVTK, fac, ngauss, coord, ne, ...
+              topol, E, nu, volumes, matID, interf, nodePairsData, edgeData, f2e, nrm_fault)
 
 
     indU = (1:3*nn);
-    %indL = (3*nn) + (1:3*ni);
-    %ntot = 3*nn + 3*ni;
+    ntot = 3*nn;
 
     nplas0 = false(ni,1);
     tplas0 = false(ni,1);
@@ -44,22 +43,19 @@ function [itGlo, convAll] = ...
             tcurr = tcurr + dt;
 
             facU = loads(indU,iStep) + (loads(indU,iStep+1)-loads(indU,iStep))*(tcurr-tstart)/dt0;
-            % facL = loads(indL,iStep) + (loads(indL,iStep+1)-loads(indL,iStep))*(tcurr-tstart)/dt0;
             facDir = bounds(iStep) + (bounds(iStep+1)-bounds(iStep))*(tcurr-tstart)/dt0;            % ????????
-            rhsUcurr = facU.*rhs(indU);
-            % rhsLcurr = facL.*rhs(indL);
+            rhscurr = facU.*rhs(indU);
             dirvalcurr = facDir*dirval;
-            rhscurr = rhsUcurr; %[rhsUcurr;rhsLcurr];
 
             % Solve the non linear contact mechanics problem
-            % +       + +   +   +     +
-            % (K - theta*B)U + N(U) + M(U) = rhs
-            % +       + +   +   +     +
+            % 
+            % (K - theta*B)U + C(U) + E(U) = rhs
+            % 
             % --> NOTE: output is the global solution, not just the increment
-            [sol, nplas, tplas, convNRvec, convFlag, C, iter] = ...
-                solve_NL_CM(nn, ni, K, B, theta, rhscurr, interfData, areaiR, sol0, state0, nplas0, tplas0, ...
+            [sol, convNRvec, convFlag, iter] = ...
+                solve_NL_CM(K, B, alpha, gamma, rhscurr, interfData, nodePairsData, areaiR, sol0, state0, ...
                             ndir, dir, dirvalcurr, noConvItMax, itmax_NR, tol_NR, ...
-                            cohes, phi, tol_sig, tol_duNc, tol_duT, itGlo, ngauss, coord, topol, ...
+                            cohes, phi, tol_sig, tol_duNc, tol_duT, tol_P, itGlo, ngauss, coord, topol, ...
                             volumes, edgeData, f2e, E, nu);
 
             % backstep algo
@@ -83,13 +79,9 @@ function [itGlo, convAll] = ...
             end
 
             if (update)
-                nplas0 = nplas;     % nplas <--> open
-                tplas0 = tplas;
+                % nplas and tplas should now be referre to the nodes!!
                 itGlo = itGlo + iter;
-
-                %sol = [sol_u;sol_l];
                 sol0 = sol;
-
                 convAll = [convAll;convNRvec];
             end
 
@@ -100,6 +92,7 @@ function [itGlo, convAll] = ...
 
         end
 
+        % TODO: modify post-process for output
         if (SAVEVTK)
             % TODO: post-process sigma
             nodeFieldNames{1} = 'ux';

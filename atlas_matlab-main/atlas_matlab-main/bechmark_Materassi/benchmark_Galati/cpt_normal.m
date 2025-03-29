@@ -11,5 +11,4 @@ function N = cpt_normal(n)
     N = [ n1   0    0   n2  n3   0;
           0    n2   0   n1   0  n3;
           0    0   n3   0   n1  n2 ];
-%     N = repmat(N,4,1);
 end

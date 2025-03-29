@@ -45,6 +45,6 @@ function [Gloc] = cpt_Gloc(ngauss, coord, topol, elem, list, ...
                     (S_n*D*Bloc(:,X))*weights(i1)*weights(i2)*detJ;
         end
     end
-    Gloc = gamma*Gloc;
+    Gloc = 1/gamma*Gloc;
 
 end
