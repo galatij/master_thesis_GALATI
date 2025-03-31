@@ -1,12 +1,7 @@
-function [C_k, KKT] = cpt_KKT(ngauss,coord,topol,E0,nu, ...
+function [C_k, KKT] = cpt_KKT(ngauss,coord,topol,E, nu, ...
                           interfData, nodePairsData, gamma, alpha, ...
-                          dsol, sigman, tol_P)
+                          dsol, stress_n, tol_P)
     
-    if (length(E0) == 1)
-        E = E0*ones(size(topol,1),1);
-    else
-        E = E0;
-    end
 
     ni = size(interfData,1);
     nn = size(coord,1);
@@ -25,9 +20,8 @@ function [C_k, KKT] = cpt_KKT(ngauss,coord,topol,E0,nu, ...
         bot_nod = nodePairsData(i).nbottom;
         top_dof = 3*(top_nod-1)+v3;
         bot_dof = 3*(bot_nod-1)+v3;
-        
         n = nodePairsData(i).normal;
-        Pgamma_u(i) = (dsol(top_dof) - dsol(bot_dof))'*n; % - sigman(top_nod);
+        Pgamma_u(i) = (dsol(top_dof) - dsol(bot_dof))'*n - stress_n(top_nod);
         
         if (Pgamma_u(i) <= -tol_P)
             Pgamma_u(i) = 0;

@@ -27,7 +27,8 @@ function [B] = assemble_B(ngauss,coord,topol,E,nu, ...
         Blist(k:k+143,:) = [JJ(:),II(:),Gloc_top(:)];
         k = k + 144;
 
-
+        % TODO: check if the following is needed or if to assemble only on
+        % the top side
         % Compute contribution on the bottom face
         bot_nod = interfData(i).bottom;
         D = cpt_elas_mat(E(interfData(i).ebottom), nu);

@@ -1,12 +1,6 @@
-function [K,rhs,E,volumes] = assemble_K_rhs(ngauss,nn,coord,ne,topol,E0,nu,e2f,faces,faceData,bound)
+function [K,rhs,E,volumes] = assemble_K_rhs(ngauss,nn,coord,ne,topol,E,nu,e2f,faces,faceData,bound)
                                   
     [nodes,weights] = gausspoints(ngauss);
-
-    if (length(E0) == 1)
-        E = E0*ones(ne,1);
-    else
-        E = E0;
-    end
 
     f2e = e2f';
 

@@ -6,10 +6,9 @@ function [itGlo, convAll] = ...
 
 
     indU = (1:3*nn);
-    ntot = 3*nn;
 
-    nplas0 = false(ni,1);
-    tplas0 = false(ni,1);
+%     nplas0 = false(ni,1);
+%     tplas0 = false(ni,1);
 
     convAll = [];
     sol0 = state0;
@@ -56,7 +55,7 @@ function [itGlo, convAll] = ...
                 solve_NL_CM(K, B, alpha, gamma, rhscurr, interfData, nodePairsData, areaiR, sol0, state0, ...
                             ndir, dir, dirvalcurr, noConvItMax, itmax_NR, tol_NR, ...
                             cohes, phi, tol_sig, tol_duNc, tol_duT, tol_P, itGlo, ngauss, coord, topol, ...
-                            volumes, edgeData, f2e, E, nu);
+                            volumes, edgeData, f2e, E,nu);
 
             % backstep algo
             if (~convFlag)

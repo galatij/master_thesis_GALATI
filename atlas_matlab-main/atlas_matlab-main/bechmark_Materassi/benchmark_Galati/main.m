@@ -82,7 +82,12 @@ for i = 1 : nedges
     bar_edg(i,:) = mean(coordOrig(edges(i,:),:));
 end
 
-[nodePairsData] = nodeManager(interf, coord, interfData);
+if (length(E0) == 1)
+    E = E0*ones(ne,1);
+else
+    E = E0;
+end
+[nodePairsData] = nodeManager(interf, coord, interfData, E, nu);
 
 %% Prescribed stress (Neumann BCs) 
 xmin = min(coordOrig(:,1));
@@ -102,7 +107,7 @@ bound(2).values = zeros(bound(2).nf,3) + [-2,0,0];              % imposition of 
 
 %% Assemble the system
 % TODO: multply by rotation matrix ???
-[K,rhs,E,volumes] = assemble_K_rhs(ngauss,nn,coord,ne,topol,E0,nu,e2f,faces,faceData,bound);
+[K,rhs,E,volumes] = assemble_K_rhs(ngauss,nn,coord,ne,topol,E,nu,e2f,faces,faceData,bound);
 [B] = assemble_B(ngauss,coord,topol,E,nu, ...
                  interf, interfData, gamma);
 nrm_fault = [1;0;0];
