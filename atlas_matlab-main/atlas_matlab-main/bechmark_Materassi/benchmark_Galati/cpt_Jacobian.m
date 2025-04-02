@@ -10,7 +10,7 @@ function [res,J] = cpt_Jacobian(ngauss,coord,topol,E, nu,...
     nn = size(coord,1);
 
     dsol0 = sol0 - state0;
-    stress = cpt_stress(ngauss,coord,topol,E,nu,sol);          % nn*6
+    stress = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu,dsol0);          % nn*6
     [stress_n, stress_t] = cpt_stress_interf(stress,nodePairsData);
 
     %% compute the residual at iteration k
@@ -18,67 +18,21 @@ function [res,J] = cpt_Jacobian(ngauss,coord,topol,E, nu,...
                           interfData, nodePairsData, gamma, alpha, ...
                           dsol0, stress_n,tol_P);
 
-    res = (K - alpha*B) * dsol0 + C0 - rhs; 
+    %% do the same for Friction term ...
+    % [F0, FRI] = cpt_FRI(ngauss, coord, topol, E, nu, ...
+    %                      interfData, nodePairsData, gamma, alpha, ...
+    %                      dsol0, stress_n,tol_P);
 
-    if (cptJ)
-        % Non-linear KKT term
-        indC = 0;
-        irowC = zeros(144*ni,1);
-        jcolC = zeros(144*ni,1);
-        valsC = zeros(144*ni,1);
+    res = (K - alpha*B) * dsol0 + C0 - rhs; % + F0
 
-        % Non-linear 
-        indF = 0;
-        irowF = zeros(144*ni,1);
-        jcolF = zeros(144*ni,1);
-        valsF = zeros(144*ni,1);
-    end
-
-    % Relative displacements (w/o stabilization effects)
-    %%% take the indices at the interface for top/bottom
+    J = K - alpha*B + KKT; % + FRI
     
-    dulocTot0 = dsol0(interf(top)) - dsol0(interf(bottom));
-    dulocTot = dsol(interf(top)) - dsol(interf(bottom));
+     %% TODO:
+%     % set Dirichlet BCs
+%     % return J, res
 
-    if S_x > 0
-            fprintf("   S_x = %.4f, ||x|| = %.4f\n", S_x, norm(x));
-            fprintf("   S_x > 0 --> choosing J_F_x = a * a'\n");
-            J_F_x = a * a'; % Full rank Jacobian
-        elseif S_x < 0
-            fprintf("   S_x = %.4f, ||x|| = %.4f\n", S_x, norm(x));
-            fprintf("   S_x < 0 --> choosing J_F_x = 0\n");
-            J_F_x = zeros(length(a)); % Zero matrix
-        else
-            switch adaptive_choice
-                case 'A' % Choosing the Largest Descent Direction
-                    if norm(x) > 1e-4
-                        fprintf("   S_x = %.4f, ||x|| = %.4f\n", S_x, norm(x));
-                        fprintf("   -- S_x = 0,   ||x|| big enough --> choosing J_F_x = a * a'\n");
-                        J_F_x = a * a';
-                    else
-                        fprintf("   S_x = %.4f, ||x|| = %.4f\n", S_x, norm(x));
-                        fprintf("   -- S_x = 0,   ||x|| too small --> choosing J_F_x = 0\n");
-                        J_F_x = zeros(length(a));
-                    end
-                case 'B' % Regularization Method
-                    J_F_x = a * a' + epsilon * eye(length(a));
-                case 'C' % Backtracking or Line Search
-                    J_F_x1 = zeros(length(a));
-                    J_F_x2 = a * a';
-                    
-                    delta_x1 = -J_F_x1 \ F_x;
-                    delta_x2 = -J_F_x2 \ F_x;
-                    
-                    if norm(F_x + J_F_x1 * delta_x1) < norm(F_x + J_F_x2 * delta_x2)
-                        J_F_x = J_F_x1;
-                    else
-                        J_F_x = J_F_x2;
-                    end
-                otherwise
-                    error('Invalid adaptive choice. Use ''A'', ''B'', or ''C''.');
-            end
-    end
 
+%%
 %     for i = 1 : ni
 %         % if open: modify matrix and rhs s.t. lambda = lambda, i.e. no
 %         % coupling

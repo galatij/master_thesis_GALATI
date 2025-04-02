@@ -21,7 +21,8 @@ function [C_k, KKT] = cpt_KKT(ngauss,coord,topol,E, nu, ...
         top_dof = 3*(top_nod-1)+v3;
         bot_dof = 3*(bot_nod-1)+v3;
         n = nodePairsData(i).normal;
-        Pgamma_u(i) = (dsol(top_dof) - dsol(bot_dof))'*n - stress_n(top_nod);
+        top_nod_loc = find([nodePairsData.ntop] == top_nod,1);
+        Pgamma_u(i) = (dsol(top_dof) - dsol(bot_dof))'*n - stress_n(top_nod_loc);
         
         if (Pgamma_u(i) <= -tol_P)
             Pgamma_u(i) = 0;
@@ -32,14 +33,13 @@ function [C_k, KKT] = cpt_KKT(ngauss,coord,topol,E, nu, ...
         else
             maskPpos(i) = true;
         end
-
     end
 
 
     KKTlist = zeros(ni*144, 3);
     k = 1;
     for i = 1 : ni     
-        % Compute contribution to the top face only (unbiased formulation)
+        % Compute contribution to the top face only (biased formulation)
         [KKTloc, KKTother] = cpt_KKTloc(ngauss, coord, topol, interfData, i, E, nu, gamma, alpha);
         
         top_nod = interfData(i).top;
@@ -62,11 +62,13 @@ function [C_k, KKT] = cpt_KKT(ngauss,coord,topol,E, nu, ...
 
     C_k = KKT * dsol;
     
-    % Take the modulus
+    % Take the positive part
     C_k(~maskPpos) = 0; 
-    KKT(maskPneg,:) = 0;
+    KKT(maskPneg,maskPneg) = 0;
 
     % Semi-smooth Newton where Pgamma_u = 0
-    %%% TODO ...
+    %%% e.g. take any value in the convex hull of the subdifferential, e.g.
+    %%% 0.5 of the computed value
+    KKT(maskP0,maskP0) = 0.5*KKT(maskP0, maskP0);
     
 end

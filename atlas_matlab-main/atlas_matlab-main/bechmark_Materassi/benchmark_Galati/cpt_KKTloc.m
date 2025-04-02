@@ -1,7 +1,7 @@
 function [KKTloc, KKTother] = cpt_KKTloc(ngauss, coord, topol, interfData, i, E, nu, gamma, alpha)
 
     % Extract the normal to face i
-    n = interfData(i).normal;
+    n = -interfData(i).normal;  % on the top face i have -normal
     S_n = n'*cpt_normal(n);
 
     nN = repelem(n,4, 1);
@@ -42,11 +42,15 @@ function [KKTloc, KKTother] = cpt_KKTloc(ngauss, coord, topol, interfData, i, E,
 
     [nodes,weights] = gausspoints(ngauss);
 
+    % TODO: same for bottom face!!!
     ID0 = (1:3)';
-    ID = zeros(3,1);
-    ID(ID0~=xi_id_top) = 1:2;
+    ID_top = zeros(3,1);
+    ID_top(ID0~=xi_id_top) = 1:2;
+    ID_bot = zeros(3,1);
+    ID_bot(ID0~=xi_id_bot) = 1:2;
     
-    % Compute local contribuition on the top face (unbiased formulation)
+    
+    % Compute local contribuition on the top face (biased formulation)
     KKTloc = zeros(12,12);
     KKTother = zeros(12,12);
     X3_top = logical(kron(X_top', ones(1,3)));
@@ -57,12 +61,12 @@ function [KKTloc, KKTother] = cpt_KKTloc(ngauss, coord, topol, interfData, i, E,
     tmp_bot(xi_id_bot) = xi_val_bot;
     for i1 = 1 : ngauss
         csi = nodes(i1);
-        tmp_top(ID==1) = csi;
-        tmp_bot(ID==1) = csi;
+        tmp_top(ID_top==1) = csi;
+        tmp_bot(ID_bot==1) = csi;
         for i2 = 1 : ngauss
             eta = nodes(i2);
-            tmp_top(ID==2) = eta;
-            tmp_bot(ID==2) = eta;
+            tmp_top(ID_top==2) = eta;
+            tmp_bot(ID_bot==2) = eta;
             [Bloc_top,detJ] = cpt_shape(loc_coo_top,tmp_top(1),tmp_top(2),tmp_top(3),xi_id_top);        % shape derivatives 6x24
             [Nloc_top] = cpt_shape_2D(loc_coo_top,tmp_top(1),tmp_top(2),tmp_top(3));                % shape functions 1x8
 %             [Bloc_bot,detJ] = cpt_shape(loc_coo_bot,tmp_bot(1),tmp_bot(2),tmp_bot(3),xi_id_bot);        % shape derivatives 6x24

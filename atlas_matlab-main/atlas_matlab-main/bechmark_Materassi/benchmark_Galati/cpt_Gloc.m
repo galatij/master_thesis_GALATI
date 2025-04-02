@@ -32,6 +32,9 @@ function [Gloc] = cpt_Gloc(ngauss, coord, topol, elem, list, ...
     % Compute local contribuition
     Gloc = zeros(12,12);
     X = logical(kron(X', ones(1,3)));     % X = repmat(X',1,3);   TODO: check storage of components
+%     e.g. on command line
+%     X = [1;0;1; 1];
+%     X3 = logical(kron(X',ones(1,3)))  % --> [1,1,1,0,0,0,1,1,1,1,1,1]
     tmp = zeros(3,1);
     tmp(xi_id) = xi_val;
     for i1 = 1 : ngauss
