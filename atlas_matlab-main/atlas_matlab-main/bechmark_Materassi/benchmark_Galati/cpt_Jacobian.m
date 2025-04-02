@@ -26,6 +26,8 @@ function [res,J] = cpt_Jacobian(ngauss,coord,topol,E, nu,...
     res = (K - alpha*B) * dsol0 + C0 - rhs; % + F0
 
     J = K - alpha*B + KKT; % + FRI
+
+    [J,res] = DirBC(ndir,dir,zeros(ndir,1),J,res);
     
      %% TODO:
 %     % set Dirichlet BCs

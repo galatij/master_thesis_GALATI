@@ -7,11 +7,10 @@ function [B] = assemble_B(ngauss,coord,topol,E,nu, ...
     nn = size(coord,1);
     
     k = 1;
-    Blist = zeros(2*ni*144,3);
+    Blist = zeros(ni*144,3);
     v3 = [1;2;3];
 
     for i = 1 : ni
-        R = interfData(i).R;
         normal = interfData(i).normal;
 
         % Compute contribution on the top face
@@ -27,20 +26,20 @@ function [B] = assemble_B(ngauss,coord,topol,E,nu, ...
         Blist(k:k+143,:) = [JJ(:),II(:),Gloc_top(:)];
         k = k + 144;
 
-        % TODO: check if the following is needed or if to assemble only on
-        % the top side
-        % Compute contribution on the bottom face
-        bot_nod = interfData(i).bottom;
-        D = cpt_elas_mat(E(interfData(i).ebottom), nu);
-        Gloc_bottom = cpt_Gloc(ngauss, coord, topol, interfData(i).ebottom, bot_nod, ...
-            normal, gamma, D); % 12*12
-        % TODO: rotate to map on the correct side
-
-        bot_dof = 3*(bot_nod-1)+v3;
-        bot_dof = bot_dof(:);
-        [II,JJ] = meshgrid(bot_dof);
-        Blist(k:k+143,:) = [JJ(:),II(:),Gloc_bottom(:)];
-        k = k + 144;
+%         % TODO: check if the following is needed or if to assemble only on
+%         % the top side
+%         % Compute contribution on the bottom face
+%         bot_nod = interfData(i).bottom;
+%         D = cpt_elas_mat(E(interfData(i).ebottom), nu);
+%         Gloc_bottom = cpt_Gloc(ngauss, coord, topol, interfData(i).ebottom, bot_nod, ...
+%             normal, gamma, D); % 12*12
+%         % TODO: rotate to map on the correct side
+% 
+%         bot_dof = 3*(bot_nod-1)+v3;
+%         bot_dof = bot_dof(:);
+%         [II,JJ] = meshgrid(bot_dof);
+%         Blist(k:k+143,:) = [JJ(:),II(:),Gloc_bottom(:)];
+%         k = k + 144;
         
 
     end

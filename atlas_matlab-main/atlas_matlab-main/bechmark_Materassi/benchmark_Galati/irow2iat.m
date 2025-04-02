@@ -2,12 +2,6 @@ function iat = irow2iat(n,irow)
 
     nterm = length(irow);
     iat = zeros(n+1,1);
-    if (~issorted(irow))
-        irow = sort(irow);
-    end
-    if (irow(1) == 0)
-        irow = irow + 1;
-    end
     irow_old = 0;
     for k = 1 : nterm
         irow_new = irow(k);

@@ -1,9 +1,9 @@
-function [A,rhs] = DirBC(ndir,inddir,presc,A,rhs);
+function [A,rhs] = DirBC(ndir,inddir,presc,A,rhs)
 
     % Matlab sparse matrix are CSC
 
     [nrows,ncols] = size(A);
-    [jcol,irow,coef] = find(A);
+    [jcol,irow,coef] = find(A);                 % [irow,jcol,coef] = find(A);
 
     % Check if there are null diagonal terms and count them
     full_set = [1:nrows]';
@@ -12,8 +12,8 @@ function [A,rhs] = DirBC(ndir,inddir,presc,A,rhs);
 
     if (nnull > 0)
         % Update jcol, irow and coef
-        i = [jcol;null_diag];
-        j = [irow;null_diag];
+        i = [jcol;null_diag];               % [irow;null_diag];
+        j = [irow;null_diag];               % [jcol;null_diag];
         aa = [coef;zeros(nnull,1)];
 
         % Save all arrays in a matrix
@@ -35,20 +35,21 @@ function [A,rhs] = DirBC(ndir,inddir,presc,A,rhs);
     zero = 0.0;
 
     for i = 1 : ndir
-        jj = inddir(i);
-        WI(jj) = i;
+        jj = inddir(i);     % index of the row where to apply b.c.
+        WI(jj) = i;         % select the index of the b.c. from presc
     end
 
     for i = 1 : nrows
-        if (WI(i) > 0)
-            k = WI(i);
-            j = iat(i);
+        if (WI(i) > 0)      % on row i I have to prescribe a Dirichlet b.c.
+            k = WI(i);      % take the idx of the b.c. from presc
+            j = iat(i);     % shift to CSR format
             while (jcol(j) < i)
                 jcol_ind = jcol(j);
                 rhs(jcol_ind) = rhs(jcol_ind)-coef(j)*presc(k);
                 coef(j) = zero;
                 j = j + 1;
             end
+            % TODO: modify (not one)
             coef(j) = one;
             for jj = j+1 : iat(i+1)-1
                 jcol_ind = jcol(jj);

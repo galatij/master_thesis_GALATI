@@ -1,9 +1,9 @@
-function [A,rhs] = DirBC(ndir,inddir,presc,A,rhs);
+function [A,rhs] = DirBC(ndir,inddir,presc,A,rhs)
 
     % Matlab sparse matrix are CSC
 
     [nrows,ncols] = size(A);
-    [jcol,irow,coef] = find(A);
+    [jcol,irow,coef] = find(A);     %  why not [irow,jcol,coef]?
 
     % Check if there are null diagonal terms and count them
     full_set = [1:nrows]';
@@ -20,7 +20,7 @@ function [A,rhs] = DirBC(ndir,inddir,presc,A,rhs);
         P = [i,j,aa];
 
         % Sort new rows and columns
-        P = sortrows(P,[2,1]);
+        P = sortrows(P,[2,1]);          % first sort rows by col (2), if equal sort by row (1)
 
         jcol = P(:,1);
         irow = P(:,2);
