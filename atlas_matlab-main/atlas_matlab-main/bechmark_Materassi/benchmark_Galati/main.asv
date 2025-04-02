@@ -170,10 +170,9 @@ if (TEST)
     v3 = [1;2;3];
     %spy(B);
     interf_nod = [nodePairsData.ntop, nodePairsData.nbottom];
-    interf_nod = sort(interf_nod)
+    interf_nod = sort(interf_nod);
     interf_dof = 3*(interf_nod-1)+v3;
     interf_dof = interf_dof(:)'
-    B_full = full(B);
 end
 
 nrm_fault = [1;0;0];

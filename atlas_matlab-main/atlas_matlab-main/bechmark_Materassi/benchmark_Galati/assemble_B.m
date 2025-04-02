@@ -1,6 +1,6 @@
 function [B] = assemble_B(ngauss,coord,topol,E,nu, ...
                           interf, interfData, gamma)
-    
+    TEST = true;
     % With numerical integration of the basis functions restricted on the face
 
     ni = size(interf,1);
@@ -12,10 +12,13 @@ function [B] = assemble_B(ngauss,coord,topol,E,nu, ...
 
     for i = 1 : ni
         normal = interfData(i).normal;
-
+        
         % Compute contribution on the top face
         top_nod = interfData(i).top;
         D = cpt_elas_mat(E(interfData(i).etop), nu);
+        if (TEST)
+            fprintf("face: %d\ntop_nod: %d %d %d %d\n", i,top_nod);
+        end
         Gloc_top = cpt_Gloc(ngauss, coord, topol, interfData(i).etop, top_nod, ...
             -normal, gamma, D); % 12*12
         % TODO: rotate to map on the correct side

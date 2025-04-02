@@ -1,5 +1,7 @@
 function [Gloc] = cpt_Gloc(ngauss, coord, topol, elem, list, ...
                                    n, gamma, D)
+
+    TEST = true;
     % list has the 4 global indices defining the face
     % coordinates of the top element (cell) (8x3 matrix)
     loc_coo = coord(topol(elem,:),:);
@@ -44,6 +46,11 @@ function [Gloc] = cpt_Gloc(ngauss, coord, topol, elem, list, ...
             eta = nodes(i2);
             tmp(find(ID==2)) = eta;
             [Bloc,detJ] = cpt_shape(loc_coo,tmp(1),tmp(2),tmp(3),xi_id);
+            if (TEST)
+%                 Bloc(:,X)
+%                 D*Bloc(:,X)
+%                 S_n*D*Bloc(:,X)
+            end
             Gloc = Gloc + (S_n*D*Bloc(:,X))'*...
                     (S_n*D*Bloc(:,X))*weights(i1)*weights(i2)*detJ;
         end
