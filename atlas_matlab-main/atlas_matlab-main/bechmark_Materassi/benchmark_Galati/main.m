@@ -11,9 +11,13 @@ clear;
 ngauss = 2;
 
 % Elastic parameters
-E0 = 25000.e0; % MPa
+E0 = 1;%25000.e0; % MPa
 % E = zeros(ne,1) + E0;
-nu = 0.25;
+nu = 0.;
+
+lambda = E0*nu/((1+nu)*(1-2*nu));
+% mu = E0/2/(1+nu)
+
 alpha = 0;  % 1 -1
 gamma = 1;  % TODO: modify gamma_h
 
@@ -170,10 +174,36 @@ if (TEST)
     v3 = [1;2;3];
     %spy(B);
     interf_nod = [nodePairsData.ntop, nodePairsData.nbottom];
-    interf_nod = sort(interf_nod)
+    interf_nod = sort(interf_nod);
     interf_dof = 3*(interf_nod-1)+v3;
-    interf_dof = interf_dof(:)'
+    interf_dof = interf_dof(:)';
     B_full = full(B);
+    eigB = eig(B_full);
+    % disp(min(eigB));
+    sumB = sum(B, 2);
+    % disp(sumB);
+
+    % benchmark_linear: u = @(x)x --> eps(u) = [1;1;1;0;0;0];
+    u = zeros(3*nn,1);
+    u(1:3:3*nn-2) = coord(:,1);
+    u(2:3:3*nn-1) = coord(:,2);
+    u(3:3:3*nn) = coord(:,3);
+    result1 = B*u;
+    % result2 = B_cmp*ones(3*nn,1);
+    D = cpt_elas_mat(E0,nu);
+    % disp(D)
+    % cpt_stress and cpt_stress_interf
+    [stress, eps] = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu,u);
+    [s_n, s_t] = cpt_stress_interf(stress,nodePairsData);
+
+    % benchmark periodic: u = @(x,y,z)[sin(x), sin(y), sin(z)]
+    u = zeros(3*nn,1);
+    u(1:3:3*nn-2) = sin(coord(:,2));
+    u(2:3:3*nn-1) = sin(coord(:,2));
+    u(3:3:3*nn) = sin(coord(:,3));
+    [stress, eps] = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu,u);
+    [s_n, s_t] = cpt_stress_interf(stress,nodePairsData);
+
 end
 
 nrm_fault = [1;0;0];

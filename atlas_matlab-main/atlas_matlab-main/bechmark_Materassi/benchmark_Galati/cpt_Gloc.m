@@ -1,7 +1,7 @@
 function [Gloc] = cpt_Gloc(ngauss, coord, topol, elem, list, ...
                                    n, gamma, D)
 
-    TEST = true;
+    TEST = false;
     % list has the 4 global indices defining the face
     % coordinates of the top element (cell) (8x3 matrix)
     loc_coo = coord(topol(elem,:),:);
@@ -32,8 +32,11 @@ function [Gloc] = cpt_Gloc(ngauss, coord, topol, elem, list, ...
     ID(ID0~=xi_id) = [1:2];
     
     % Compute local contribuition
+    if (TEST)
+        Gloc_cmp = zeros(12,12);
+    end
     Gloc = zeros(12,12);
-    X = logical(kron(X', ones(1,3)));     % X = repmat(X',1,3);   TODO: check storage of components
+    X3 = logical(kron(X', ones(1,3)));     % X = repmat(X',1,3);   TODO: check storage of components
 %     e.g. on command line
 %     X = [1;0;1; 1];
 %     X3 = logical(kron(X',ones(1,3)))  % --> [1,1,1,0,0,0,1,1,1,1,1,1]
@@ -50,11 +53,24 @@ function [Gloc] = cpt_Gloc(ngauss, coord, topol, elem, list, ...
 %                 Bloc(:,X)
 %                 D*Bloc(:,X)
 %                 S_n*D*Bloc(:,X)
+                B_u = repmat([diag(ones(3,1)); zeros(3,3)],1,4);
+                Gloc_cmp = Gloc_cmp + (S_n*D*B_u)'*...
+                            (S_n*D*Bloc(:,X3))*weights(i1)*weights(i2)*detJ;
+%                 [Btmp,detJ] = cpt_shape(loc_coo,0,0,0,xi_id);
+%                 tmp_coo = loc_coo(X,:);
+%                 Btmp = Btmp(:,X3);
+%                 Btmp*tmp_coo(:);
+
+        
             end
-            Gloc = Gloc + (S_n*D*Bloc(:,X))'*...
-                    (S_n*D*Bloc(:,X))*weights(i1)*weights(i2)*detJ;
+            Gloc = Gloc + (S_n*D*Bloc(:,X3))'*...
+                    (S_n*D*Bloc(:,X3))*weights(i1)*weights(i2)*detJ;
         end
     end
     Gloc = 1/gamma*Gloc;
+
+    if (TEST)
+        Gloc_cmp = 1/gamma*Gloc_cmp;
+    end
 
 end
