@@ -1,8 +1,6 @@
 function [B] = assemble_B(ngauss,coord,topol,E,nu, ...
                           interf, interfData, gamma)
     TEST = false;
-    % With numerical integration of the basis functions restricted on the face
-
     ni = size(interf,1);
     nn = size(coord,1);
     
@@ -11,30 +9,25 @@ function [B] = assemble_B(ngauss,coord,topol,E,nu, ...
     v3 = [1;2;3];
 
     for i = 1 : ni
+        % Extract local data
         normal = interfData(i).normal;
-        
-        % Compute contribution on the top face
-        top_nod = interfData(i).top;
-        D = cpt_elas_mat(E(interfData(i).etop), nu);
-        if (TEST)
-            fprintf("face: %d\ntop_nod: %d %d %d %d\n", i,top_nod);
-        end
-        [Gloc_top] = cpt_Gloc(ngauss, coord, topol, interfData(i).etop, top_nod, ...
-            -normal, gamma, D); % 12*12
-        % TODO: rotate to map on the correct side
+        nod_top = interfData(i).top;
+        etop = interfData(i).etop;
+        D = cpt_elas_mat(E(etop), nu);
 
-        top_dof = 3*(top_nod-1)+v3;
+        % Compute contributions on the top face (biased formulation)
+        [Gloc_top] = cpt_Gloc(ngauss, coord, topol, etop, nod_top, ...
+            -normal, gamma, D); % 12*12
+
+        % Map local to global entries
+        nod_elem_top = topol(etop,:);
+        top_dof = 3*(nod_elem_top-1)+v3;
         top_dof = top_dof(:);
         [II,JJ] = meshgrid(top_dof);
-        Blist(k:k+143,:) = [JJ(:),II(:),Gloc_top(:)];
-        if (TEST)
-            Blist_cmp(k:k+143,:) = [JJ(:),II(:),Gloc_cmp(:)];
-        end
-        k = k + 144;
-
-%         % TODO: check if the following is needed or if to assemble only on
-%         % the top side
-%         % Compute contribution on the bottom face
+        Blist(k:k+575,:) = [JJ(:),II(:),Gloc_top(:)];
+        k = k + 576;
+        
+%         % Compute contribution on the bottom face (unbiased formulation)
 %         bot_nod = interfData(i).bottom;
 %         D = cpt_elas_mat(E(interfData(i).ebottom), nu);
 %         Gloc_bottom = cpt_Gloc(ngauss, coord, topol, interfData(i).ebottom, bot_nod, ...
@@ -47,12 +40,7 @@ function [B] = assemble_B(ngauss,coord,topol,E,nu, ...
 %         Blist(k:k+143,:) = [JJ(:),II(:),Gloc_bottom(:)];
 %         k = k + 144;
         
-
     end
     B = sparse(Blist(:,1),Blist(:,2),Blist(:,3),3*nn,3*nn,size(Blist,1));
     B = 0.5*(B + B');
-    if (TEST)
-        B_cmp = sparse(Blist_cmp(:,1),Blist_cmp(:,2),Blist_cmp(:,3),3*nn,3*nn,size(Blist_cmp,1));
-        B_cmp = 0.5*(B_cmp + B_cmp');
-    end
 end

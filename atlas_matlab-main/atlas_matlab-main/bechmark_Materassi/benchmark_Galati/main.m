@@ -2,6 +2,8 @@ clc;
 close all;
 clear;
 
+TEST = true;
+
 % NOTE
 % ur = uB - uT
 % normal: from T to B
@@ -29,7 +31,6 @@ maxBackStep = 4;
 
 % Nitche's parameters
 SAVEVTK = false;
-TEST = true;
 tol_sig = 1.e-2 * 1e-2;
 tol_duNc = 1.e-5 * 1e-2;
 tol_duT = 1.e-5 * 1e-2;
@@ -38,19 +39,21 @@ cohes = 0.0;
 phi = 30.0/180.0*pi;
 
 %% Create the mesh
-nx = 8;
+nx = 16;
 ny = 16;
 nz = 16;
 Lx = 1;
 Ly = 8;
 Lz = 8;
 
-nx = 1;
-ny = 2;
-nz = 2;
-Lx = 1;
-Ly = 4;
-Lz = 4;
+if (TEST)
+    nx = 1;
+    ny = 2;
+    nz = 2;
+    Lx = 1;
+    Ly = 4;
+    Lz = 4;
+end
 
 [nn,coord,coordOrig,ne,topol,ni,interf,interf2e,ndir,dir,dirval,dx,dy,dz,matID] = ...
     cpt_mesh(nx,ny,nz,Lx,Ly,Lz);
@@ -99,7 +102,7 @@ end
 %% Testing
 if (TEST)
     fileID = fopen('test/node_manager_debug.txt', 'w');
-    fprintf("\ntopol: %d x %d\n",ne, 8);
+    fprintf(fileID,"\ntopol: %d x %d\n",ne, 8);
     fprintf(fileID, 'Coordinates (coord matrix):\n');
     for i = 1:size(coord, 1)
         fprintf(fileID, '%d: %f %f %f\n', i, coord(i, :));
@@ -170,40 +173,51 @@ bound(2).values = zeros(bound(2).nf,3) + [-2,0,0];              % imposition of 
                  interf, interfData, gamma);
 
 if (TEST)
-    % spy(K);
-    v3 = [1;2;3];
-    %spy(B);
-    interf_nod = [nodePairsData.ntop, nodePairsData.nbottom];
-    interf_nod = sort(interf_nod);
-    interf_dof = 3*(interf_nod-1)+v3;
-    interf_dof = interf_dof(:)';
-    B_full = full(B);
-    eigB = eig(B_full);
-    % disp(min(eigB));
-    sumB = sum(B, 2);
-    % disp(sumB);
-
-    % benchmark_linear: u = @(x)x --> eps(u) = [1;1;1;0;0;0];
+%     % spy(K);
+%     v3 = [1;2;3];
+%     %spy(B);
+%     interf_nod = [nodePairsData.ntop, nodePairsData.nbottom];
+%     interf_nod = sort(interf_nod);
+%     interf_dof = 3*(interf_nod-1)+v3;
+%     interf_dof = interf_dof(:)';
+%     B_full = full(B);
+%     eigB = eig(B_full);
+%     % disp(min(eigB));
+%     sumB = sum(B, 2);
+%     % disp(sumB);
+% 
+%     % benchmark_linear: u = @(x)x --> eps(u) = [1;1;1;0;0;0];
+%     u = zeros(3*nn,1);
+%     u(1:3:3*nn-2) = coord(:,1);
+%     u(2:3:3*nn-1) = coord(:,2);
+%     u(3:3:3*nn) = coord(:,3);
+%     result1 = B*u;
+%     % result2 = B_cmp*ones(3*nn,1);
+%     D = cpt_elas_mat(E0,nu);
+%     % disp(D)
+%     % cpt_stress and cpt_stress_interf
+%     [stress, eps] = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu,u);
+%     [s_n, s_t] = cpt_stress_interf(stress,nodePairsData);
+% 
+%     % benchmark periodic: u = @(x,y,z)[sin(x), sin(y), sin(z)]
+%     u = zeros(3*nn,1);
+%     u(1:3:3*nn-2) = sin(coord(:,2));
+%     u(2:3:3*nn-1) = sin(coord(:,2));
+%     u(3:3:3*nn) = sin(coord(:,3));
+%     [stress, eps] = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu,u);
+%     [s_n, s_t] = cpt_stress_interf(stress,nodePairsData);
+%     figure(1)
+%     spy(K)
+%     figure(2)
+%     spy(B)
+% 
+% 
+    % global assembly
     u = zeros(3*nn,1);
     u(1:3:3*nn-2) = coord(:,1);
-    u(2:3:3*nn-1) = coord(:,2);
-    u(3:3:3*nn) = coord(:,3);
-    result1 = B*u;
-    % result2 = B_cmp*ones(3*nn,1);
-    D = cpt_elas_mat(E0,nu);
-    % disp(D)
-    % cpt_stress and cpt_stress_interf
-    [stress, eps] = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu,u);
-    [s_n, s_t] = cpt_stress_interf(stress,nodePairsData);
-
-    % benchmark periodic: u = @(x,y,z)[sin(x), sin(y), sin(z)]
-    u = zeros(3*nn,1);
-    u(1:3:3*nn-2) = sin(coord(:,2));
-    u(2:3:3*nn-1) = sin(coord(:,2));
-    u(3:3:3*nn) = sin(coord(:,3));
-    [stress, eps] = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu,u);
-    [s_n, s_t] = cpt_stress_interf(stress,nodePairsData);
-
+    r = B*u;
+    %disp(norm(r));
+    assert(norm(B - B', 'fro') < 1e-12)     %% pass
 end
 
 nrm_fault = [1;0;0];
