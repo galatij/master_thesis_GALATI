@@ -1,5 +1,5 @@
-function [KKTloc, KKTother] = cpt_KKTloc(ngauss, coord, topol, interfData, i, E, nu, gamma, alpha)
-
+function [KKT11,KKT12,KKT21,KKT22] = cpt_KKTloc(ngauss, coord, topol, interfData, i, E, nu, gamma, alpha)
+    TEST = false;
     % Extract the normal to face i
     n = interfData(i).normal;  % on the top face i have normal      Check: n or -n ??
     S_n = n'*cpt_normal(n);
@@ -26,7 +26,6 @@ function [KKTloc, KKTother] = cpt_KKTloc(ngauss, coord, topol, interfData, i, E,
     Nloc_bot = cpt_shape_2D(loc_coo_bot,csi,eta,theta);
     X_top = ismember(Nloc_top*loc_coo_top,coord(top_nod,:),'row');
     X_bot = ismember(Nloc_bot*loc_coo_bot,coord(bot_nod,:),'row');
-    id = 0;
 
     for i = 1 : 3
         if (std(xi(X_top,i)) == 0)
@@ -51,8 +50,10 @@ function [KKTloc, KKTother] = cpt_KKTloc(ngauss, coord, topol, interfData, i, E,
     
     
     % Compute local contribuition on the top face (biased formulation)
-    KKTloc = zeros(24,24);
-    KKTother = zeros(24,24);
+    KKT11 = zeros(24,24);
+    KKT12 = zeros(24,24);
+    KKT21 = zeros(24,24);
+    KKT22 = zeros(24,24);
     tmp_top = zeros(3,1);
     tmp_bot = zeros(3,1);
     tmp_top(xi_id_top) = xi_val_top;
@@ -70,17 +71,31 @@ function [KKTloc, KKTother] = cpt_KKTloc(ngauss, coord, topol, interfData, i, E,
             [Nloc_bot] = cpt_shape_2D(loc_coo_bot,tmp_bot(1),tmp_bot(2),tmp_bot(3));                % shape functions 1x8
             Nloc_top = repelem(Nloc_top,1,3);                                      % shape functions 1x24
             Nloc_bot = repelem(Nloc_bot,1,3);
-            
+            if (TEST)
+                disp('Shape functions (top face):');
+                disp(Nloc_top);
+                disp('Shape functions (bottom face):');
+                disp(Nloc_bot);
+            end
             
             P = gamma*Nloc_top.*nN - (S_n*D_top*Bloc_top);                 % P 1x24
             Palpha = gamma*Nloc_top.*nN - alpha*(S_n*D_top*Bloc_top);
+            if (TEST)
+                sol_test = loc_coo_top';
+                sol_test = sol_test(:) + 1;
+                disp(Nloc_top(:).*sol_test.*nN');
+                disp(P*sol_test);      % works correctly
+            end
+            
+            % KKT11 multiplies the top displacement
+            KKT11 = KKT11 + 1/gamma*P'*Palpha*weights(i1)*weights(i2)*detJ;
 
-            % KKTloc multiplies the top displacement
-            KKTloc = KKTloc + 1/gamma*P'*Palpha*weights(i1)*weights(i2)*detJ;
+            KKT12 = KKT12 + 1/gamma*(-gamma*Nloc_bot.*nN)'*Palpha*weights(i1)*weights(i2)*detJ;
 
-            % KKTother multiplies the bottom diplacement (needed for the
-            % jump)
-            KKTother = KKTother + 1/gamma*(-gamma*Nloc_bot.*nN)'*Palpha*weights(i1)*weights(i2)*detJ;
+            KKT21 = KKT21 + 1/gamma*P'*(-gamma*Nloc_bot.*nN)*weights(i1)*weights(i2)*detJ;
+
+            KKT22 = KKT22 + 1/gamma*(-gamma*Nloc_bot.*nN)'*(-gamma*Nloc_bot.*nN)*weights(i1)*weights(i2)*detJ;
+
         end
     end
     

@@ -18,7 +18,7 @@ function [B] = assemble_B(ngauss,coord,topol,E,nu, ...
 
         % Compute contributions on the top face (biased formulation)
         [Gloc_top] = cpt_Gloc(ngauss, coord, topol, etop, nod_top, ...
-            normal, gamma/h, D); % 12*12
+            normal, gamma/h, D); % 24*24
 
         % Map local to global entries
         nod_elem_top = topol(etop,:);

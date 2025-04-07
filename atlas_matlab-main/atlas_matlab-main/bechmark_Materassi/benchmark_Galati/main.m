@@ -20,8 +20,8 @@ nu = 0.;
 lambda = E0*nu/((1+nu)*(1-2*nu));
 % mu = E0/2/(1+nu)
 
-alpha = 0;  % 1 -1
-gamma = 10;  % TODO: modify gamma_h
+alpha = -1;  % 0 1 -1
+gamma = 1.e5;  % TODO: modify gamma_h
 
 % Newton-Raphson parameters
 itmax_NR = 20 * 100;

@@ -2,7 +2,7 @@ function [C_k, KKT] = cpt_KKT(ngauss,coord,topol,E, nu, ...
                           interfData, nodePairsData, gamma, alpha, ...
                           dsol, stress_n, tol_P)
     
-
+    TEST = true;
     ni = size(interfData,1);
     nn = size(coord,1);
     nni = size(nodePairsData, 1);
@@ -32,40 +32,86 @@ function [C_k, KKT] = cpt_KKT(ngauss,coord,topol,E, nu, ...
             maskP0(i) = true;
         else
             maskPpos(i) = true;
-        end
+        end        
     end
 
-
-    KKTlist = zeros(ni*576, 3);
-    KKTlist2 = zeros(ni*576, 3);
+%     if (TEST && norm(Pgamma_u) < 1e-12)
+%         warning("Pgamma_u is zero...");
+%     end
+    KKTlist11 = zeros(ni*576, 3);
+    KKTlist12 = zeros(ni*576, 3);
+    KKTlist21 = zeros(ni*576, 3);
+    KKTlist22 = zeros(ni*576, 3);
     k = 1;
-    for i = 1 : ni     
-        % Compute contribution to the top face only (biased formulation)
-        [KKTloc, KKTother] = cpt_KKTloc(ngauss, coord, topol, interfData, i, E, nu, gamma, alpha);
-        assert(all(size(KKTloc) == [24, 24]), 'KKTloc size mismatch!');
+    for i = 1 : ni 
 
+        % Compute contribution to the top face only (biased formulation)
+        [KKT11,KKT12,KKT21,KKT22] = cpt_KKTloc(ngauss, coord, topol, interfData, i, E, nu, gamma, alpha);
+        
         top_nod = topol(interfData(i).etop,:);
         bot_nod = topol(interfData(i).ebottom,:);
         top_dof = 3*(top_nod-1)+v3;
         top_dof = top_dof(:);
         [II_top,JJ_top] = meshgrid(top_dof);
         % TODO: rotate to map on the correct side
-        KKTlist(k:k+575,:) = [JJ_top(:),II_top(:),KKTloc(:)];
+        KKTlist11(k:k+575,:) = [JJ_top(:),II_top(:),KKT11(:)];
         
-
         bot_dof = 3*(bot_nod-1)+v3;
         bot_dof = bot_dof(:);
-        [II_bot,JJ_bot] = meshgrid(bot_dof, top_dof);
-        KKTlist2(k:k+575,:) = [JJ_bot(:),II_bot(:),KKTother(:)];
-        assert(all(size(KKTloc) == [24, 24]), 'KKTloc size mismatch!');
+        [II_bot,JJ_top] = meshgrid(bot_dof, top_dof);
+        KKTlist12(k:k+575,:) = [JJ_top(:),II_bot(:),KKT12(:)];
+
+        [II_top,JJ_bot] = meshgrid(top_dof, bot_dof);
+        KKTlist21(k:k+575,:) = [JJ_bot(:),II_top(:),KKT21(:)];
+
+        [II_bot,JJ_bot] = meshgrid(bot_dof, bot_dof);
+        KKTlist22(k:k+575,:) = [JJ_bot(:),II_bot(:),KKT22(:)];
+
 
         k = k + 576;
                 
     end
-    KKT = sparse(KKTlist(:,1),KKTlist(:,2),KKTlist(:,3),3*nn,3*nn,size(KKTlist,1));
-    KKT = KKT + sparse(KKTlist2(:,1),KKTlist2(:,2),KKTlist2(:,3),3*nn,3*nn,size(KKTlist2,1));
+    KKT = sparse(KKTlist11(:,1),KKTlist11(:,2),KKTlist11(:,3),3*nn,3*nn,size(KKTlist11,1));
+    KKT = KKT + sparse(KKTlist12(:,1),KKTlist12(:,2),KKTlist12(:,3),3*nn,3*nn,size(KKTlist12,1)) ...
+              + sparse(KKTlist21(:,1),KKTlist21(:,2),KKTlist21(:,3),3*nn,3*nn,size(KKTlist21,1)) ...
+              + sparse(KKTlist22(:,1),KKTlist22(:,2),KKTlist22(:,3),3*nn,3*nn,size(KKTlist22,1));
 
-    C_k = KKT * dsol;
+    
+%% Taking only test functions on top side
+
+%         % Compute contribution to the top face only (biased formulation)
+%         [KKTloc, KKTother] = cpt_KKTloc(ngauss, coord, topol, interfData, i, E, nu, gamma, alpha);
+%         assert(all(size(KKTloc) == [24, 24]), 'KKTloc size mismatch!');
+% 
+%         top_nod = topol(interfData(i).etop,:);
+%         bot_nod = topol(interfData(i).ebottom,:);
+%         top_dof = 3*(top_nod-1)+v3;
+%         top_dof = top_dof(:);
+%         [II_top,JJ_top] = meshgrid(top_dof);
+%         % TODO: rotate to map on the correct side
+%         KKTlist(k:k+575,:) = [JJ_top(:),II_top(:),KKTloc(:)];
+%         
+% 
+%         bot_dof = 3*(bot_nod-1)+v3;
+%         bot_dof = bot_dof(:);
+%         [II_bot,JJ_bot] = meshgrid(bot_dof, top_dof);
+%         KKTlist2(k:k+575,:) = [JJ_bot(:),II_bot(:),KKTother(:)];
+% %         KKTlist2(k:k+575,:) = [II_bot(:),JJ_bot(:),KKTother(:)];
+%         assert(all(size(KKTloc) == [24, 24]), 'KKTloc size mismatch!');
+%         if (alpha == 1)
+%             assert(norm(KKTloc-KKTloc', 'fro') < 1.e-6, 'KKTloc not symmetric!');
+%             % assert(norm(KKTother-KKTother', 'fro') == 0, 'KKTother not symmetric!');
+%         end
+%         k = k + 576;
+%                 
+%     end
+%     KKT = sparse(KKTlist(:,1),KKTlist(:,2),KKTlist(:,3),3*nn,3*nn,size(KKTlist,1));
+%     KKT = KKT + sparse(KKTlist2(:,1),KKTlist2(:,2),KKTlist2(:,3),3*nn,3*nn,size(KKTlist2,1));
+%     assert(~isempty(KKT(7,1)), 'Wrong mapping from local to global!')
+%     
+% %     assert(norm(KKT - KKT', 'fro') < 1.e-12, "KKT is NOT symmetric!")
+% 
+%     C_k = KKT * dsol;
     
     % Take the positive part
     % map nni -> global dofs
@@ -79,17 +125,19 @@ function [C_k, KKT] = cpt_KKT(ngauss,coord,topol,E, nu, ...
     constrained_nodes0 = all_ntop(maskP0);
     constrained_dof0 = 3*(constrained_nodes0-1)+v3;
     constrained_dof0 = constrained_dof0(:);
+    
     C_k(constrained_dof0neg) = 0;
-
+    KKT(constrained_dof_neg, constrained_dof_neg) = 0;
 %     KKT(constrained_dof_neg, :) = 0;
 %     KKT(:, constrained_dof_neg) = 0;
-    KKT(constrained_dof_neg, constrained_dof_neg) = 0;
 
     % Semi-smooth Newton where Pgamma_u = 0
     %%% e.g. take any value in the convex hull of the subdifferential, e.g.
     %%% 0.5 of the computed value
     KKT(constrained_dof0, constrained_dof0) = 0.5*KKT(constrained_dof0, constrained_dof0);
-    
+%     figure(2)
+%     spy(KKT)
+
     if any(isnan(KKT(:))) || any(isinf(KKT(:)))
         error('KKT contains NaN or Inf values!');
     end
