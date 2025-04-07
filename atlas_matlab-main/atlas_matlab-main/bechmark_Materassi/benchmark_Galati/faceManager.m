@@ -62,7 +62,7 @@ function [nf, faces, faceData, e2f, areaf, interfData] = ...
     end
     
     interfData = repmat(struct('top', zeros(4,1), 'bottom', zeros(4,1), 'etop', 1, 'ebottom', 1, ...
-        'area', 1, 'normal', zeros(3,1), 'bar', zeros(3,1), 'normEdges', zeros(4,3)), ni, 1);
+        'area', 1, 'normal', zeros(3,1), 'bar', zeros(3,1), 'normEdges', zeros(4,3), 'h', 1), ni, 1);
     for i = 1 : ni
         iloc = interf(i,1:4);
         v1 = coordT(:,iloc(2)) - coordT(:,iloc(1));
@@ -106,7 +106,14 @@ function [nf, faces, faceData, e2f, areaf, interfData] = ...
         interfData(i).R = Q * diag(D);
         % Save the barycenter
         interfData(i).bar = loc_bar;
-      
+        coo = coord(interfData(i).top, :);
+        h = max(0, norm(coo(4,:)-coo(1,:)));
+        for n = 2:4
+            cn = coo(n, :);
+            cm = coo(n-1, :);
+            h = max(h, norm(cn-cm));
+        end
+        interfData(i).h = h;
     end
 
 end

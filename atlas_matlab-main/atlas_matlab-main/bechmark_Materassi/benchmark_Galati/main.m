@@ -13,7 +13,7 @@ TEST = true;
 ngauss = 2;
 
 % Elastic parameters
-E0 = 1;%25000.e0; % MPa
+E0 = 25000; % MPa
 % E = zeros(ne,1) + E0;
 nu = 0.;
 
@@ -21,7 +21,7 @@ lambda = E0*nu/((1+nu)*(1-2*nu));
 % mu = E0/2/(1+nu)
 
 alpha = 0;  % 1 -1
-gamma = 1;  % TODO: modify gamma_h
+gamma = 10;  % TODO: modify gamma_h
 
 % Newton-Raphson parameters
 itmax_NR = 20 * 100;
@@ -213,10 +213,20 @@ if (TEST)
 % 
 % 
     % global assembly
+    u = ones(3*nn,1);
+    r = B*u;
+    assert(norm(r) < 1e-12);                %% pass: stress is null everywhere
+    
+    % u = [x,0,0] --> grad(u) = [1;0;0;0;0;0]' --> sigma_n only along x
     u = zeros(3*nn,1);
     u(1:3:3*nn-2) = coord(:,1);
-    r = B*u;
-    %disp(norm(r));
+    Bu1 = B*u;
+
+    % u = [x,y,z] should give the same result of u = [x,0,0]
+    u(2:3:3*nn-1) = coord(:,2);
+    u(3:3:3*nn) = coord(:,3);
+    Bu2 = B*u;
+    assert(norm(Bu1-Bu2) < 1e-12);          %% pass
     assert(norm(B - B', 'fro') < 1e-12)     %% pass
 end
 

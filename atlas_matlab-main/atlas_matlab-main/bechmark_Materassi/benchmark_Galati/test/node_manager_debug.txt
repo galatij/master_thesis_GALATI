@@ -64,6 +64,7 @@ Interface Data (interfData struct):
   normal: [1;0;0]
   bar: [0;1;1]
   normEdges: [0 0 -1;0 -1 0;0 1 0;0 0 1]
+  h: 2
   R: [1 0 0;0 1 0;0 0 1]
 
 2:
@@ -75,6 +76,7 @@ Interface Data (interfData struct):
   normal: [1;0;0]
   bar: [0;3;1]
   normEdges: [0 0 -1;0 -1 0;0 1 0;0 0 1]
+  h: 2
   R: [1 0 0;0 1 0;0 0 1]
 
 3:
@@ -86,6 +88,7 @@ Interface Data (interfData struct):
   normal: [1;0;0]
   bar: [0;1;3]
   normEdges: [0 0 -1;0 -1 0;0 1 0;0 0 1]
+  h: 2
   R: [1 0 0;0 1 0;0 0 1]
 
 4:
@@ -97,6 +100,7 @@ Interface Data (interfData struct):
   normal: [1;0;0]
   bar: [0;3;3]
   normEdges: [0 0 -1;0 -1 0;0 1 0;0 0 1]
+  h: 2
   R: [1 0 0;0 1 0;0 0 1]
 
 

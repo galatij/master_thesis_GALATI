@@ -1,10 +1,10 @@
 function [KKTloc, KKTother] = cpt_KKTloc(ngauss, coord, topol, interfData, i, E, nu, gamma, alpha)
 
     % Extract the normal to face i
-    n = -interfData(i).normal;  % on the top face i have -normal
+    n = interfData(i).normal;  % on the top face i have normal      Check: n or -n ??
     S_n = n'*cpt_normal(n);
-
-    nN = repelem(n,4, 1);
+    gamma = gamma/interfData(i).h;
+    nN = repmat(n',1,8);
 
     % Extract the coordinates of top and bottom faces
     loc_coo_top = coord(topol(interfData(i).etop,:),:);
@@ -51,10 +51,8 @@ function [KKTloc, KKTother] = cpt_KKTloc(ngauss, coord, topol, interfData, i, E,
     
     
     % Compute local contribuition on the top face (biased formulation)
-    KKTloc = zeros(12,12);
-    KKTother = zeros(12,12);
-    X3_top = logical(kron(X_top', ones(1,3)));
-    X3_bot = logical(kron(X_bot', ones(1,3)));
+    KKTloc = zeros(24,24);
+    KKTother = zeros(24,24);
     tmp_top = zeros(3,1);
     tmp_bot = zeros(3,1);
     tmp_top(xi_id_top) = xi_val_top;
@@ -69,21 +67,20 @@ function [KKTloc, KKTother] = cpt_KKTloc(ngauss, coord, topol, interfData, i, E,
             tmp_bot(ID_bot==2) = eta;
             [Bloc_top,detJ] = cpt_shape(loc_coo_top,tmp_top(1),tmp_top(2),tmp_top(3),xi_id_top);        % shape derivatives 6x24
             [Nloc_top] = cpt_shape_2D(loc_coo_top,tmp_top(1),tmp_top(2),tmp_top(3));                % shape functions 1x8
-%             [Bloc_bot,detJ] = cpt_shape(loc_coo_bot,tmp_bot(1),tmp_bot(2),tmp_bot(3),xi_id_bot);        % shape derivatives 6x24
             [Nloc_bot] = cpt_shape_2D(loc_coo_bot,tmp_bot(1),tmp_bot(2),tmp_bot(3));                % shape functions 1x8
-            Nloc_top = repelem(Nloc_top(:,X_top),1,3);                                      % shape functions 1x12
-            Nloc_bot = repelem(Nloc_bot(:,X_bot),1,3);
+            Nloc_top = repelem(Nloc_top,1,3);                                      % shape functions 1x24
+            Nloc_bot = repelem(Nloc_bot,1,3);
             
             
-            P = Nloc_top.*nN' - gamma*(S_n*D_top*Bloc_top(:,X3_top));                                       % P 1x12
-            Palpha = Nloc_top.*nN' - alpha*gamma*(S_n*D_top*Bloc_top(:,X3_top));
+            P = gamma*Nloc_top.*nN - (S_n*D_top*Bloc_top);                 % P 1x24
+            Palpha = gamma*Nloc_top.*nN - alpha*(S_n*D_top*Bloc_top);
 
             % KKTloc multiplies the top displacement
             KKTloc = KKTloc + 1/gamma*P'*Palpha*weights(i1)*weights(i2)*detJ;
 
             % KKTother multiplies the bottom diplacement (needed for the
             % jump)
-            KKTother = KKTother + 1/gamma*(-Nloc_bot.*nN')'*Palpha*weights(i1)*weights(i2)*detJ;
+            KKTother = KKTother + 1/gamma*(-gamma*Nloc_bot.*nN)'*Palpha*weights(i1)*weights(i2)*detJ;
         end
     end
     
