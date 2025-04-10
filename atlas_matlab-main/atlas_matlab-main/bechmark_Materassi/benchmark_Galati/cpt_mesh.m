@@ -101,10 +101,11 @@ function [nn,coord,coordOrig,ne,topol,ni,interf,interf2e,ndir,dir,dirval,dx,dy,d
     end
     interf2e = sparse(irow, jcol, coef);
 
-    dir = zeros(3*nn+3*ni+ni,1);
+    %% Dirichlet BCs
+    dir = zeros(3*nn+3*ni+ni,1); % just preallocating, not all entries are used
     dirval = zeros(3*nn+3*ni+ni,1);
     j = 0;
-    % Bottom/top
+    % Bottom/top: fully constrain bottom face only
     for i = 1 : nnx*nny
         k = i;
         j = j + 1;
@@ -117,7 +118,7 @@ function [nn,coord,coordOrig,ne,topol,ni,interf,interf2e,ndir,dir,dirval,dx,dy,d
         dir(j) = 3*(k-1)+3;
         dirval(j) = 0.0;
 
-        k = i + nnx*nny*(nnz-1);
+        %k = i + nnx*nny*(nnz-1);
         %j = j + 1;
         %dir(j) = 3*(k-1)+1;
         %dirval(j) = 0.0;
@@ -128,7 +129,7 @@ function [nn,coord,coordOrig,ne,topol,ni,interf,interf2e,ndir,dir,dirval,dx,dy,d
 %        dir(j) = 3*(k-1)+3;
 %        dirval(j) = 0.0;
     end
-    % Left/right
+    % Left/right: constrain x direction for left only
     for i = 1 : nny*nnz
         k = (i-1)*nnx + 1;
         j = j + 1;
@@ -153,7 +154,7 @@ function [nn,coord,coordOrig,ne,topol,ni,interf,interf2e,ndir,dir,dirval,dx,dy,d
         %dir(j) = 3*(k-1)+3;
         %dirval(j) = 0.0;
     end
-    % Front/back
+    % Front/back: constrain y direction of both front and back
     for i = 1 : nnz
         k = (i-1)*nnx*nny;
         for i1 = 1 : nnx
@@ -181,6 +182,6 @@ function [nn,coord,coordOrig,ne,topol,ni,interf,interf2e,ndir,dir,dirval,dx,dy,d
             %dirval(j) = 0.0;
         end
     end
-    ndir = j;
+    ndir = j; % gives the relevant entries in dir and dirval (number of constrained DOFs)
 
 end

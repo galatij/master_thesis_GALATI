@@ -3,7 +3,7 @@ close all;
 clear;
 
 TEST = false;
-TEST1 = false;
+TEST1 = true;
 % NOTE
 % ur = uB - uT
 % normal: from T to B
@@ -20,8 +20,8 @@ nu = 0.;
 lambda = E0*nu/((1+nu)*(1-2*nu));
 % mu = E0/2/(1+nu)
 
-alpha = 0;  % 0 1 -1
-gamma = 10*E0;  % TODO: modify gamma_h
+alpha = -1;  % 0 1 -1
+gamma = 1.e5;  % TODO: modify gamma_h
 
 % Newton-Raphson parameters
 itmax_NR = 20 * 100;
@@ -55,12 +55,12 @@ if (TEST)
     Lz = 4;
 end
 if (TEST1)
-    nx = 8;
-    ny = 8;
-    nz = 8;
+    nx = 2;
+    ny = 2;
+    nz = 2;
     Lx = 1;
-    Ly = 8;
-    Lz = 8;
+    Ly = 4;
+    Lz = 4;
 end
 
 [nn,coord,coordOrig,ne,topol,ni,interf,interf2e,ndir,dir,dirval,dx,dy,dz,matID] = ...

@@ -24,9 +24,9 @@ function [Gloc] = cpt_Gloc(ngauss, coord, topol, elem, list, ...
 
     [nodes,weights] = gausspoints(ngauss);
 
-    ID0 = [1:3]';
+    ID0 = (1:3)';
     ID = zeros(3,1);
-    ID(ID0~=xi_id) = [1:2];
+    ID(ID0~=xi_id) = 1:2;
     
     Gloc = zeros(24,24);
     tmp = zeros(3,1);

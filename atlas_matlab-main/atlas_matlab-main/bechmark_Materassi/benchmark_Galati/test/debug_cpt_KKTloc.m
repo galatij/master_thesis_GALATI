@@ -84,8 +84,6 @@ for i1 = 1 : ngauss
     end
 end
 
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 disp('Computed local KKTloc:')
 disp(KKTloc)

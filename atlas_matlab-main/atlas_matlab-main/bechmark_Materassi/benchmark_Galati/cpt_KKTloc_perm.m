@@ -1,4 +1,4 @@
-function [KKT11,KKT12,KKT21,KKT22] = cpt_KKTloc(ngauss, coord, topol, interfData, i, E, nu, gamma, alpha)
+function [KKT11,KKT12,KKT21,KKT22] = cpt_KKTloc_perm(ngauss, coord, topol, interfData, i, E, nu, gamma, alpha)
     TEST = false;
     % Extract the normal to face i
     n = interfData(i).normal;  % on the top face i have normal      Check: n or -n ??
@@ -24,8 +24,12 @@ function [KKT11,KKT12,KKT21,KKT22] = cpt_KKTloc(ngauss, coord, topol, interfData
     xi = [csi,eta,theta];
     Nloc_top = cpt_shape_2D(loc_coo_top,csi,eta,theta);
     Nloc_bot = cpt_shape_2D(loc_coo_bot,csi,eta,theta);
-    X_top = ismember(Nloc_top*loc_coo_top,coord(top_nod,:),'row');
-    X_bot = ismember(Nloc_bot*loc_coo_bot,coord(bot_nod,:),'row');
+    X_top = ismember(Nloc_top*loc_coo_top,coord(top_nod,:),'row');  % 2 6 18 14
+    X_bot = ismember(Nloc_bot*loc_coo_bot,coord(bot_nod,:),'row');  % 3 7 19 15
+    
+
+    %% Compute permutation
+    % Get the coordinates of shape nodes (same for both top and bottom elements in reference space)
 
     for i = 1 : 3
         if (std(xi(X_top,i)) == 0)
@@ -88,16 +92,16 @@ function [KKT11,KKT12,KKT21,KKT22] = cpt_KKTloc(ngauss, coord, topol, interfData
             end
 
             % top-top (trial/test)
-            KKT11 = KKT11 + 1/gamma*Palpha'*P*weights(i1)*weights(i2)*detJ;
+            KKT11 = KKT11 + 1/gamma*P'*Palpha*weights(i1)*weights(i2)*detJ;
             
             % CHECK: maybe i need to reorder the bottom dofs!!!
 
             % top-bottom
-            KKT12 = KKT12 + 1/gamma*Palpha'*(-gamma*Nloc_bot.*nN)*weights(i1)*weights(i2)*detJ;
+            KKT12 = KKT12 + 1/gamma*(-gamma*Nloc_bot.*nN)'*Palpha*weights(i1)*weights(i2)*detJ;
 
             % CHECK: do I need to account for the following too?
             % bottom-top
-            KKT21 = KKT21 + 1/gamma*(-gamma*Nloc_bot.*nN)'*P*weights(i1)*weights(i2)*detJ;
+            KKT21 = KKT21 + 1/gamma*P'*(-gamma*Nloc_bot.*nN)*weights(i1)*weights(i2)*detJ;
 
             % bottom-bottom
             KKT22 = KKT22 + 1/gamma*(-gamma*Nloc_bot.*nN)'*(-gamma*Nloc_bot.*nN)*weights(i1)*weights(i2)*detJ;

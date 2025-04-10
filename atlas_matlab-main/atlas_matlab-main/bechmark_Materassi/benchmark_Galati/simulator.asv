@@ -82,7 +82,7 @@ function [itGlo, convAll] = ...
         if (SAVEVTK)
             IDprint = 0;
             nodeFieldNames = cell(9,1);
-            nodeScalarFields = cell(6,1);
+            nodeScalarFields = cell(3,1);
             cellFieldNames = cell(8,1);
             cellScalarFields = cell(8,1);
             cellFieldNames2D = cell(10,1);
@@ -95,23 +95,36 @@ function [itGlo, convAll] = ...
             nodeScalarFields{1} = sol(1:3:3*nn);
             nodeScalarFields{2} = sol(2:3:3*nn);
             nodeScalarFields{3} = sol(3:3:3*nn);
+            nodeScalarFields{4} = 'sigma';
+            cellFieldNames2D{2} = 'tau1';
+            cellFieldNames2D{3} = 'tau2';
+            cellFieldNames2D{4} = '|tau|';
+            cellFieldNames2D{5} = 'duN';
+            cellFieldNames2D{6} = 'duT1';
+            cellFieldNames2D{7} = 'duT2';
+            cellFieldNames2D{8} = '|duT|';
+            cellFieldNames2D{9} = 'nplas';
+            cellFieldNames2D{10} = 'tplas';
 
-            % TODO: cpt_stress in all the nodes --> cpt traction
-            stress = cpt_stress(. . .);
-            traction = cpt_traction(. . .);
-            nodeFieldNames{4} = 'sigma';
-            cellFieldNames{5} = 'tau1';
-            cellFieldNames{6} = 'tau2';
-            cellScalarFields{5} = traction(:,1);
-            cellScalarFields{5} = traction(:,2);
-            cellScalarFields{6} = traction(:,3);
-
-            % TODO: just on the fault
-            cellScalarFields{7} = '|tau|';
-            cellScalarFields{8} = 'duN';
-            cellScalarFields{9} = 'duT1';
-            cellScalarFields{10} = 'duT2';
-            cellScalarFields{11} = '|duT|';
+            stress_fault = zeros(ni,3);
+            stress = cpt_stress(ngauss, coord, ne, topol, E, nu, sol_u);
+            for i = 1 : ni
+                top = interfData(i).etop;
+                bot = interfData(i).ebottom;
+                Ri = interfData(i).R;
+                stress_loc = ((stress(top,:)*volumes(top) + stress(bot,:)*volumes(bot)) / (volumes(top) + volumes(bot)));
+                stress_tens(1,1) = stress_loc(1);
+                stress_tens(1,2) = stress_loc(4);
+                stress_tens(1,3) = stress_loc(5);
+                stress_tens(2,1) = stress_loc(4);
+                stress_tens(2,2) = stress_loc(2);
+                stress_tens(2,3) = stress_loc(6);
+                stress_tens(3,1) = stress_loc(5);
+                stress_tens(3,2) = stress_loc(6);
+                stress_tens(3,3) = stress_loc(3);
+                stress_tens = Ri'*stress_tens*Ri;
+                stress_fault(i,:) = (stress_tens*nrm_fault)';
+            end
 
             cellFieldNames{1} = 'Material_ID';
             cellFieldNames{2} = 'Young_modulus';

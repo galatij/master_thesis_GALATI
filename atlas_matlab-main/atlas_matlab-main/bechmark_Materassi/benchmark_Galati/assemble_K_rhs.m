@@ -41,25 +41,6 @@ function [K,rhs,E,volumes] = assemble_K_rhs(ngauss,nn,coord,ne,topol,E,nu,e2f,fa
         %    rhsloc(ii) = rhsloc(ii) + rhs0;
         %end
 
-
-        % Check if the element is at the interface
-%         loc_interf = find(interf2e(:,i));
-%         if ~isempty(loc_interf)
-%             %% Check if the element is a top or bottom element
-%             if (interfData(loc_interf).etop == i)
-%                 list = interfData(loc_interf).top;
-%                 normal = interfData(loc_interf).normal;
-%             else
-%                 list = interfData(loc_interf).bottom;
-%                 normal = interfData(loc_interf).normal;
-%             end
-%             N = normal*normal';
-%             Gloc = cpt_shape_interf(ngauss, coord, topol, i, list, ...
-%                                    N, gamma, D);
-%             Kloc = Kloc + Gloc;
-%         end
-        
-
         % Neumann boundary condition
         loc_faces = find(f2e(:,i));
         for jf = 1 : length(bound)

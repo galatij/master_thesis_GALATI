@@ -1,4 +1,4 @@
-function [sol,iter,rnorm,conv,resvec,res] = newton_solver(f,x0,itmax,tol,maxarm,printflag,iter0)
+function [sol,iter,rnorm,conv,resvec,res] = newton_solver(f,x0,itmax,tol,maxarm,printflag)
 
     rnorm = 1.0;
     iter = 0;
