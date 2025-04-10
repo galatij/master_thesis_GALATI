@@ -11,6 +11,15 @@ function [itGlo, convAll] = ...
     sol0 = state0;
     itGlo = 0;
 
+    if (SAVEVTK)
+        IDprint = 0;
+        nodeFieldNames = cell(15,1);
+        nodeScalarFields = cell(15,1);
+        cellFieldNames = cell(2,1);
+        cellScalarFields = cell(2,1);
+%         cellFieldNames2D = cell(10,1);
+%         cellScalarFields2D = cell(10,1);
+    end
     for iStep = 1 : length(steps)-1
         tstart = steps(iStep);
         tend = steps(iStep+1);
@@ -80,15 +89,6 @@ function [itGlo, convAll] = ...
 
         % TODO: modify post-process for output
         if (SAVEVTK)
-            IDprint = 0;
-            nodeFieldNames = cell(9,1);
-            nodeScalarFields = cell(6,1);
-            cellFieldNames = cell(8,1);
-            cellScalarFields = cell(8,1);
-            cellFieldNames2D = cell(10,1);
-            cellScalarFields2D = cell(10,1);
-
-            % TODO: post-process sigma
             nodeFieldNames{1} = 'ux';
             nodeFieldNames{2} = 'uy';
             nodeFieldNames{3} = 'uz';
@@ -97,44 +97,58 @@ function [itGlo, convAll] = ...
             nodeScalarFields{3} = sol(3:3:3*nn);
 
             % TODO: cpt_stress in all the nodes --> cpt traction
-            stress = cpt_stress(. . .);
-            traction = cpt_traction(. . .);
-            nodeFieldNames{4} = 'sigma';
-            cellFieldNames{5} = 'tau1';
-            cellFieldNames{6} = 'tau2';
-            cellScalarFields{5} = traction(:,1);
-            cellScalarFields{5} = traction(:,2);
-            cellScalarFields{6} = traction(:,3);
+            stress = cpt_stress_tot(ngauss,coord,topol,E,nu,sol);
+%             traction = cpt_traction_tot(. . .);
+            nodeFieldNames{4} = 'Sx';
+            nodeFieldNames{5} = 'Sy';
+            nodeFieldNames{6} = 'Sz';
+            nodeFieldNames{7} = 'Tyz';
+            nodeFieldNames{8} = 'Txz';
+            nodeFieldNames{9} = 'Txy';
+            nodeScalarFields{4} = stress(:,1);
+            nodeScalarFields{5} = stress(:,2);
+            nodeScalarFields{6} = stress(:,3);
+            nodeScalarFields{7} = stress(:,6);
+            nodeScalarFields{8} = stress(:,5);
+            nodeScalarFields{9} = stress(:,4);
 
-            % TODO: just on the fault
-            cellScalarFields{7} = '|tau|';
-            cellScalarFields{8} = 'duN';
-            cellScalarFields{9} = 'duT1';
-            cellScalarFields{10} = 'duT2';
-            cellScalarFields{11} = '|duT|';
+            % Fault data
+            nni = numel(nodePairsData);
+            stress_interf = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu,sol);
+            [sigma_n, sigma_t] = cpt_stress_interf(stress_interf, nodePairsData);
+            for i = 1:nni
+                n = nodePairsData(i).normal;
+                t1 = nodePairsData(i).t1;
+                t2 = nodePairsData(i).t2;
+                % TODO: extract t1, t2 tangential directions
+                nodeFieldNames{10} = 'sigma_n';
+                nodeFieldNames{11} = '|tau|';
+                nodeFieldNames{12} = 'duN';
+                nodeFieldNames{13} = 'duT1';
+                nodeFieldNames{14} = 'duT2';
+                nodeFieldNames{15} = '|duT|';
+                v3 = [1;2;3];
+                dof_top = 3*(nodePairsData(i).ntop-1)+v3;
+                dof_bot = 3*(nodePairsData(i).nbottom-1)+v3;
+                du = sol(dof_top(:)) - sol(dof_bot(:));
+                nodeScalarFields{10} = sigma_n(i);
+                nodeScalarFields{11} = norm(sigma_t(i,:));
+                nodeScalarFields{12} = du*n';
+                nodeScalarFields{13} = du*t1';
+                nodeScalarFields{14} = du*t2';
+                nodeScalarFields{15} = norm(nodeScalarFields{13}+nodeScalarFields{14});
+            end                
 
             cellFieldNames{1} = 'Material_ID';
             cellFieldNames{2} = 'Young_modulus';
-            cellFieldNames{3} = 'SX';
-            cellFieldNames{4} = 'SY';
-            cellFieldNames{5} = 'SZ';
-            cellFieldNames{6} = 'TXY';
-            cellFieldNames{7} = 'TXZ';
-            cellFieldNames{8} = 'TYZ';
             cellScalarFields{1} = matID;
             cellScalarFields{2} = E;
-            cellScalarFields{3} = stress(:,1);
-            cellScalarFields{4} = stress(:,2);
-            cellScalarFields{5} = stress(:,3);
-            cellScalarFields{6} = stress(:,6);
-            cellScalarFields{7} = stress(:,5);
-            cellScalarFields{8} = stress(:,4);
+
             IDprint = IDprint + 1;
             fileName = sprintf('result_%3.3i.vtk', IDprint);
-            coordDef = coord + fac*reshape(sol_u,[3,nn])';
+            coordDef = coord + fac*reshape(sol,[3,nn])';
             write_vtk(fileName, iStep, coordDef, topol, interf, nodeScalarFields, ...
-                      nodeFieldNames, cellScalarFields, cellFieldNames, ...
-                      cellScalarFields2D, cellFieldNames2D);
+                      nodeFieldNames, cellScalarFields, cellFieldNames);                      
         end
     end
 

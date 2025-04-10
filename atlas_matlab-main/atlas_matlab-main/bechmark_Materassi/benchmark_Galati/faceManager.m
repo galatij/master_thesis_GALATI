@@ -62,7 +62,7 @@ function [nf, faces, faceData, e2f, areaf, interfData] = ...
     end
     
     interfData = repmat(struct('top', zeros(4,1), 'bottom', zeros(4,1), 'etop', 1, 'ebottom', 1, ...
-        'area', 1, 'normal', zeros(3,1), 'bar', zeros(3,1), 'normEdges', zeros(4,3), 'h', 1), ni, 1);
+        'area', 1, 'normal', zeros(3,1), 't1', zeros(3,1), 't2', zeros(3,1), 'bar', zeros(3,1), 'normEdges', zeros(4,3), 'h', 1), ni, 1);
     for i = 1 : ni
         iloc = interf(i,1:4);
         v1 = coordT(:,iloc(2)) - coordT(:,iloc(1));
@@ -90,10 +90,25 @@ function [nf, faces, faceData, e2f, areaf, interfData] = ...
         x0 = bar_ele(ielem,:)';
         % To ensure TOP -> BOTTOM normal orientation
         if ((loc_bar-x0)'*normf0 > 0)
-            interfData(i).normal = normf0(:);
+            n = normf0(:);
         else
-            interfData(i).normal = -normf0(:);
+            n = -normf0(:);
         end
+        interfData(i).normal = n;
+        
+        % Compute two orthonormal tangential basis vectors
+        if abs(n(2)) < 1e-6 && abs(n(3)) < 1e-6  % If n is aligned with x-axis
+            e1 = [0;1;0];  % Pick a different arbitrary vector
+        else
+            e1 = [1;0;0];  
+        end
+        t1 = cross(e1, n);
+        t1 = t1 / norm(t1);
+        t2 = cross(n, t1);
+        t2 = t2 / norm(t2);
+        interfData(i).t1 = t1;
+        interfData(i).t2 = t2;
+
         % Compute local rotation matrix
         nrm = interfData(i).normal;
         [Q, ~] = qr(nrm);

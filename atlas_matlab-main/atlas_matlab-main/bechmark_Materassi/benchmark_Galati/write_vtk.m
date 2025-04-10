@@ -1,6 +1,5 @@
 function write_vtk(fileName, time, coord3D, topol3D, topol2D, nodeScalarFields3D, ...
-                   nodeFieldNames3D, cellScalarFields3D, cellFieldNames3D, ...
-                   cellScalarFields2D, cellFieldNames2D)
+                   nodeFieldNames3D, cellScalarFields3D, cellFieldNames3D)
 
     % Open output file
     FID_vtk = fopen(fileName, 'wb', 'ieee-be');
@@ -36,8 +35,8 @@ function write_vtk(fileName, time, coord3D, topol3D, topol2D, nodeScalarFields3D
 
     write_attributes(FID_vtk, 'POINT_DATA', nNodes, nodeScalarFields3D, nodeFieldNames3D);
 
-    cellScalarFields = cell(length(cellScalarFields3D)+length(cellScalarFields2D),1);
-    cellFieldNames = cell(length(cellScalarFields3D)+length(cellScalarFields2D),1);
+    cellScalarFields = cell(length(cellScalarFields3D),1);
+    cellFieldNames = cell(length(cellScalarFields3D),1);
     for i = 1 : length(cellScalarFields3D)
         cellFieldNames{i} = cellFieldNames3D{i};
         if (strcmpi(cellFieldNames3D{i}, 'Material_ID'))
@@ -45,11 +44,6 @@ function write_vtk(fileName, time, coord3D, topol3D, topol2D, nodeScalarFields3D
         else
             cellScalarFields{i} = [cellScalarFields3D{i};zeros(nFaces,1)+mean(cellScalarFields3D{i})];
         end
-    end
-    for i = 1 : length(cellScalarFields2D)
-        cellFieldNames{i+length(cellScalarFields3D)} = cellFieldNames2D{i};
-        cellScalarFields{i+length(cellScalarFields3D)} = ...
-            [zeros(nCells,1)+mean(cellScalarFields2D{i});cellScalarFields2D{i}];
     end
     write_attributes(FID_vtk, 'CELL_DATA', nCells+nFaces, cellScalarFields, cellFieldNames);
     fclose(FID_vtk);

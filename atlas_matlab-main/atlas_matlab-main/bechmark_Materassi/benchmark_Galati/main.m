@@ -3,7 +3,7 @@ close all;
 clear;
 
 TEST = false;
-TEST1 = false;
+TEST1 = true;
 % NOTE
 % ur = uB - uT
 % normal: from T to B
@@ -20,7 +20,7 @@ nu = 0.;
 lambda = E0*nu/((1+nu)*(1-2*nu));
 % mu = E0/2/(1+nu)
 
-alpha = 0;  % 0 1 -1
+alpha = -1;  % 0 1 -1
 gamma = 10*E0;  % TODO: modify gamma_h
 
 % Newton-Raphson parameters
@@ -30,7 +30,7 @@ noConvItMax = 4;
 maxBackStep = 4;
 
 % Nitsche's parameters
-SAVEVTK = false;
+SAVEVTK = true;
 tol_sig = 1.e-2 * 1e-2;
 tol_duNc = 1.e-5 * 1e-2;
 tol_duT = 1.e-5 * 1e-2;
