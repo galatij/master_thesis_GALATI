@@ -1,54 +1,13 @@
 function [F_k, FRI] = cpt_FRI(ngauss,coord,topol,E, nu, ...
                           interfData, nodePairsData, gamma, alpha, phi, ...
-                          dsol, stress_n, stress_t, tol_P)
+                          dsol, masksP, Pnu_gp, Ptu_gp)
     
     TEST = false;
     ni = size(interfData,1);
     nn = size(coord,1);
-    nni = size(nodePairsData, 1);
-    
+
     %% Evaluate the positive part and the projection
     v3 = [1;2;3];
-    Pn = zeros(nni, 1);
-    Pt = zeros(nni,2);
-    % needed for the pseudo-Jacobian
-    masksP = struct("n0", false(nni,1),"npos", false(nni,1),"nneg", false(nni,1),...
-                   "t0", false(nni,1), "tstick", false(nni,1), "tslide", false(nni,1));
-
-    for i = 1 : nni
-        % map node -> dofs
-        top_nod = nodePairsData(i).ntop;
-        bot_nod = nodePairsData(i).nbottom;
-        top_dof = 3*(top_nod-1)+v3;
-        bot_dof = 3*(bot_nod-1)+v3;
-        n = nodePairsData(i).normal;
-        t1 = nodePairsData(i).t1;
-        t2 = nodePairsData(i).t2;
-        top_nod_loc = find([nodePairsData.ntop] == top_nod,1);
-        Pn(i) = gamma*(dsol(top_dof) - dsol(bot_dof))'*n - stress_n(top_nod_loc);
-        Pt(i,1) = gamma*(dsol(top_dof) - dsol(bot_dof))'*t1 - stress_t(top_nod_loc,1);
-        Pt(i,2) = gamma*(dsol(top_dof) - dsol(bot_dof))'*t2 - stress_t(top_nod_loc,2);
-        normPt = vecnorm(Pt,2,2);
-
-        if (Pn(i) <= -tol_P) % open ---> F(maskPnneg) = 0
-            Pn(i) = 0;
-            masksP.nneg(i) = true;
-        elseif (abs(Pn(i)) < tol_P) % non-smooth case 1 ---> F(maskPn0) = 0, FRI(pn0,pn0) = ... 
-            Pn(i) = 0;
-            masksP.n0(i) = true;
-        else % not open
-            masksP.npos(i) = true;
-            if (normPt(i) - phi*Pn(i) < -tol_P) % sticking ---> FRI(...) = sth (easy term)
-                masksP.tstick(i) = true;
-            elseif (abs(normPt(i) - phi*Pn(i)) < tol_P) % non-smooth case 2 --> they're almost the same, so just take the easiest one (?) 
-                masksP.t0(i) = true;
-            else % sliding --> FRI() = sth (difficult term)
-                masksP.tslide(i) = true;
-                Pt(i,:) = Pn(i)*Pt(i,:)/normPt(i);
-            end
-        end
-    end
-    
 
 %     if (TEST && norm(Pgamma_u) < 1e-12)
 %         warning("Pgamma_u is zero...");
@@ -63,7 +22,7 @@ function [F_k, FRI] = cpt_FRI(ngauss,coord,topol,E, nu, ...
 
         % Compute contribution to the top face only (biased formulation)
         [FRI11,FRI12,FRI21,FRI22] = cpt_FRIloc(ngauss, coord, topol, interfData, nodePairsData, i, ...
-                    E, nu, gamma, alpha, phi, Pt, Pn, tol_P);
+                    E, nu, gamma, alpha, phi, Pnu_gp{i}, Ptu_gp{i}, tol_P);
         
         top_nod = topol(interfData(i).etop,:);
         bot_nod = topol(interfData(i).ebottom,:);
@@ -88,10 +47,10 @@ function [F_k, FRI] = cpt_FRI(ngauss,coord,topol,E, nu, ...
                 
     end
     % CHECK: ...(:,1), ...(:,2) or the reverse?
-    FRI = sparse(FRIlist11(:,2),FRIlist11(:,1),FRIlist11(:,3),3*nn,3*nn,size(FRIlist11,1));
-    FRI = FRI + sparse(FRIlist12(:,2),FRIlist12(:,1),FRIlist12(:,3),3*nn,3*nn,size(FRIlist12,1)) ...
-              + sparse(FRIlist21(:,2),FRIlist21(:,1),FRIlist21(:,3),3*nn,3*nn,size(FRIlist21,1)) ...
-              + sparse(FRIlist22(:,2),FRIlist22(:,1),FRIlist22(:,3),3*nn,3*nn,size(FRIlist22,1));
+    FRI = sparse(FRIlist11(:,2),FRIlist11(:,1),FRIlist11(:,3),3*nn,3*nn,size(FRIlist11,1)) ...
+        + sparse(FRIlist12(:,2),FRIlist12(:,1),FRIlist12(:,3),3*nn,3*nn,size(FRIlist12,1)) ...
+        + sparse(FRIlist21(:,2),FRIlist21(:,1),FRIlist21(:,3),3*nn,3*nn,size(FRIlist21,1)) ...
+        + sparse(FRIlist22(:,2),FRIlist22(:,1),FRIlist22(:,3),3*nn,3*nn,size(FRIlist22,1));
     
     F_k = FRI * dsol;
     
@@ -101,19 +60,19 @@ function [F_k, FRI] = cpt_FRI(ngauss,coord,topol,E, nu, ...
     all_ntop = [nodePairsData.ntop];
 
     % where Pn < 0 --> set zero F, zero Jacobian
-    nodes_n_neg = all_ntop(maskPnneg);
+    nodes_n_neg = all_ntop(masksP.nneg);
     dof_n_neg = 3*(nodes_n_neg-1)+v3;
     dof_n_neg = dof_n_neg(:);
 
-    nodes_n_0 = all_ntop(maskPn0);
+    nodes_n_0 = all_ntop(masksP.n0);
     dof_n_0 = 3*(nodes_n_0-1)+v3;
     dof_n_0 = dof_n_0(:);
 
-    nodes_t_stick = all_ntop(maskPtstick);
+    nodes_t_stick = all_ntop(masksP.stick);
     dof_t_stick = 3*(nodes_t_stick-1)+v3;
     dof_t_stick = dof_t_stick(:);
 
-    nodes_t_0 = all_ntop(maskPt0);
+    nodes_t_0 = all_ntop(masksP.t0);
     dof_t_0 = 3*(nodes_t_0-1)+v3;
     dof_t_0 = dof_t_0(:);
 

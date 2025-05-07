@@ -1,43 +1,13 @@
 function [C_k, KKT] = cpt_KKT(ngauss,coord,topol,E, nu, ...
                           interfData, nodePairsData, gamma, alpha, ...
-                          dsol, stress_n, tol_P)
+                          dsol, masksP)
     
     TEST = true;
     ni = size(interfData,1);
     nn = size(coord,1);
-    nni = size(nodePairsData, 1);
     
     %% Evaluate the modulus
     v3 = [1;2;3];
-    Pgamma_u = zeros(nni, 1);
-    % needed for the pseudo-Jacobian
-    maskP0 = false(nni,1);
-    maskPpos = false(nni,1);
-    maskPneg = false(nni,1);
-    for i = 1 : nni
-        % map node -> dofs
-        top_nod = nodePairsData(i).ntop;
-        bot_nod = nodePairsData(i).nbottom;
-        top_dof = 3*(top_nod-1)+v3;
-        bot_dof = 3*(bot_nod-1)+v3;
-        n = nodePairsData(i).normal;
-        top_nod_loc = find([nodePairsData.ntop] == top_nod,1);
-        Pgamma_u(i) = gamma*(dsol(top_dof) - dsol(bot_dof))'*n - stress_n(top_nod_loc);
-        
-        if (Pgamma_u(i) <= -tol_P)
-            Pgamma_u(i) = 0;
-            maskPneg(i) = true;
-        elseif (abs(Pgamma_u(i)) < tol_P)
-            Pgamma_u(i) = 0;
-            maskP0(i) = true;
-        else
-            maskPpos(i) = true;
-        end        
-    end
-
-%     if (TEST && norm(Pgamma_u) < 1e-12)
-%         warning("Pgamma_u is zero...");
-%     end
 
     KKTlist11 = zeros(ni*576, 3);
     KKTlist12 = zeros(ni*576, 3);
@@ -84,10 +54,10 @@ function [C_k, KKT] = cpt_KKT(ngauss,coord,topol,E, nu, ...
                 
     end
     % CHECK: ...(:,1), ...(:,2) or the reverse?
-    KKT = sparse(KKTlist11(:,2),KKTlist11(:,1),KKTlist11(:,3),3*nn,3*nn,size(KKTlist11,1));
-    KKT = KKT + sparse(KKTlist12(:,2),KKTlist12(:,1),KKTlist12(:,3),3*nn,3*nn,size(KKTlist12,1)) ...
-              + sparse(KKTlist21(:,2),KKTlist21(:,1),KKTlist21(:,3),3*nn,3*nn,size(KKTlist21,1)) ...
-              + sparse(KKTlist22(:,2),KKTlist22(:,1),KKTlist22(:,3),3*nn,3*nn,size(KKTlist22,1));
+    KKT = sparse(KKTlist11(:,2),KKTlist11(:,1),KKTlist11(:,3),3*nn,3*nn,size(KKTlist11,1)) ...
+        + sparse(KKTlist12(:,2),KKTlist12(:,1),KKTlist12(:,3),3*nn,3*nn,size(KKTlist12,1)) ...
+        + sparse(KKTlist21(:,2),KKTlist21(:,1),KKTlist21(:,3),3*nn,3*nn,size(KKTlist21,1)) ...
+        + sparse(KKTlist22(:,2),KKTlist22(:,1),KKTlist22(:,3),3*nn,3*nn,size(KKTlist22,1));
 
     
 %% Taking only test functions on top side
@@ -129,13 +99,13 @@ function [C_k, KKT] = cpt_KKT(ngauss,coord,topol,E, nu, ...
     % Take the positive part
     % map nni -> global dofs
     all_ntop = [nodePairsData.ntop];
-    constrained_nodes0neg = all_ntop(~maskPpos);
+    constrained_nodes0neg = all_ntop(~masksP.npos);
     constrained_dof0neg = 3*(constrained_nodes0neg-1)+v3;
     constrained_dof0neg = constrained_dof0neg(:);
-    constrained_nodes_neg = all_ntop(maskPneg);
+    constrained_nodes_neg = all_ntop(masksP.nneg);
     constrained_dof_neg = 3*(constrained_nodes_neg-1)+v3;
     constrained_dof_neg = constrained_dof_neg(:);
-    constrained_nodes0 = all_ntop(maskP0);
+    constrained_nodes0 = all_ntop(masksP.n0);
     constrained_dof0 = 3*(constrained_nodes0-1)+v3;
     constrained_dof0 = constrained_dof0(:);
     

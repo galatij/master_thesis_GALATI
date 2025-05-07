@@ -1,4 +1,5 @@
 function [KKT11,KKT12,KKT21,KKT22] = cpt_KKTloc(ngauss, coord, topol, interfData, i, E, nu, gamma, alpha)
+    
     TEST = false;
     % Extract the normal to face i
     n = interfData(i).normal;  % on the top face i have normal      Check: n or -n ??

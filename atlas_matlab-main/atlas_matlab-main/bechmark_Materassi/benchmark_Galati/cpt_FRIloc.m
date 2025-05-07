@@ -1,6 +1,6 @@
 function [FRIstick11,FRIstick12,FRIstick21,FRIstick22,FRIslide11,FRIslide12,FRIslide21,FRIslide22] = ...
                     cpt_FRIloc(ngauss, coord, topol, interfData, nodePairsData, i, ...
-                    E, nu, gamma, alpha, phi, Ptu, Pnu, tol_P)
+                    E, nu, gamma, alpha, phi, Pnu_gp, Ptu_gp, tol_P)
     TEST = false;
     %% Extract data for face i
     n = interfData(i).normal;  % on the top face i have normal      Check: n or -n ??
@@ -75,6 +75,9 @@ function [FRIstick11,FRIstick12,FRIstick21,FRIstick22,FRIslide11,FRIslide12,FRIs
     tmp_bot = zeros(3,1);
     tmp_top(xi_id_top) = xi_val_top;
     tmp_bot(xi_id_bot) = xi_val_bot;
+
+    gp_idx = 0; % counter for the gauss point
+
     for i1 = 1 : ngauss
         csi = nodes(i1);
         tmp_top(ID_top==1) = csi;
@@ -113,13 +116,11 @@ function [FRIstick11,FRIstick12,FRIstick21,FRIstick22,FRIslide11,FRIslide12,FRIs
             % bottom-bottom
             FRIstick22 = FRIstick22 + 1/gamma*(-gamma*Nloc_bot.*tT)'*(-gamma*Nloc_bot.*tT)*weights(i1)*weights(i2)*detJ;
             
+
+            %% Sliding interface
+            
             all_top_nod = [nodePairsData.ntop];
             loc_nodes_interf = find(ismember([nodePairsData.ntop], top_nod));
-            % Pnu = 4x1, Ptu = 4x2
-            Ptu_loc = Ptu(loc_nodes_interf,:);
-            normPtu = sqrt(sum(Ptu_loc.^2, 2));
-            normPtu(find(normPtu < 1e-6)) = 1e-6;
-            normPtu = repelem(normPtu,3,1);
             
 %             if (norm(Ptu_loc) > 1e-6)
 %                 tt = Ptu_loc./norm(Ptu_loc);
@@ -140,6 +141,8 @@ function [FRIstick11,FRIstick12,FRIstick21,FRIstick22,FRIslide11,FRIslide12,FRIs
             % bottom-bottom
             FRIslide22 = FRIslide22 + phi/gamma*(-gamma*Nloc_bot.*tT)'*(-gamma*Nloc_bot.*tT)*weights(i1)*weights(i2)*detJ;
             
+            %increment the counter
+            gp_idx = gp_idx + 1;
         end
     end
     

@@ -4,20 +4,19 @@ function [res,J] = cpt_Jacobian(ngauss,coord,topol,E, nu,...
                                 cohes,phi,tol_duT,tol_P,iter,sol)
 
     dsol0 = sol - state0;
-    [stress,~, stress_gp, u_gp] = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu,dsol0);          % nn*6
-    [stress_n, stress_t] = cpt_stress_interf(stress,nodePairsData);
-
-    [] = cpt_Pu(stress_n,stress_t, dsol0, gamma, alpha);
+    [stress,~, Pn_gp, Pt_gp] = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu,gamma,dsol0);          % nn*6
+    [stress_n, stress_t] = cpt_stress_interf(stress,stress_gp,u_gp,nodePairsData);
+    masksP = set_masks(stress_n,stress_t, dsol, nodePairsData, gamma);
 
     %% compute the residual at iteration k
     [C0, KKT] = cpt_KKT(ngauss, coord, topol, E, nu, ...
                           interfData, nodePairsData, gamma, alpha, ...
-                          dsol0, stress_n,tol_P);
+                          dsol0, masksP);
 
     %% do the same for Friction term ...
     [F0, FRI] = cpt_FRI(ngauss, coord, topol, E, nu, ...
                          interfData, nodePairsData, gamma, alpha, phi, ...
-                         dsol0, stress_n, stress_t, tol_P);
+                         dsol0, masksP, Pn_gp, Pt_gp);
 
     res = (K - alpha*B) * dsol0 + C0 - rhs; % + F0
 
