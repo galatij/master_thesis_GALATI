@@ -3,7 +3,7 @@ close all;
 clear;
 
 TEST = false;
-TEST1 = true;
+TEST1 = false;
 % NOTE
 % ur = uB - uT
 % normal: from T to B
@@ -13,7 +13,7 @@ TEST1 = true;
 ngauss = 2;
 
 % Elastic parameters
-E0 = 25000; % MPa
+E0 = 1; % MPa
 % E = zeros(ne,1) + E0;
 nu = 0.;
 
@@ -179,7 +179,6 @@ bound(2).values = zeros(bound(2).nf,3) + [-2,0,0];              % imposition of 
 [K,rhs,E,volumes] = assemble_K_rhs(ngauss,nn,coord,ne,topol,E,nu,e2f,faces,faceData,bound);
 [B] = assemble_B(ngauss,coord,topol,E,nu, ...
                  interf, interfData, gamma);
-
 if (TEST)
 %     % spy(K);
 %     v3 = [1;2;3];
@@ -217,7 +216,7 @@ if (TEST)
 %     figure(1)
 %     spy(K)
 %     figure(2)
-%     spy(B)
+% spy(B)
 % 
 % 
     % global assembly

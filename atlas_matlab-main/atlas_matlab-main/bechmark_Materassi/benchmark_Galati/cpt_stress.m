@@ -1,36 +1,48 @@
-function [stress, eps] = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu,sol)
-    ni = numel(interfData);
-    nni = numel(nodePairsData);
-    stress = zeros(nni,6);
-    eps = zeros(nni,6);
-    node_count = zeros(nni,1); % counter for averaging
+function varargout = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu,sol)
     TEST = false;
-    biased = false;
+%     biased = false;
+
+    ni = numel(interfData); % number of interface faces
+    nni = numel(nodePairsData); % number of nodes at the interface
+    stress = zeros(nni,6); % stress in each top node
+    eps = zeros(nni,6); % strain in each top node
+    node_count = zeros(nni,1); % counter for averaging
+
     v3 = [1;2;3];
-    
+    if nargout > 2
+        stress_gp_all = cell(ni,1); % for each face, store the stress in each gauss point
+    end
+    if nargout > 3
+        u_gp_all = cell(ni,1); % for each face, interpolate the displacement (sol) in each gauss point
+    end
+
     for i = 1:ni
+
         % Extract the coordinates of top and bottom faces
-        % check: sort(topol(....)); ???
+        % TODO: check sort(topol(....)); ???
         nod_top = topol(interfData(i).etop,:);
         nod_top_face = interfData(i).top;
         coo_top = coord(nod_top,:);
         dof_top = 3*(nod_top-1)+v3;
         dof_top = dof_top(:);
         sol_top = sol(dof_top);
+        sol_top_mat = reshape(sol_top, 3, 8)';  % (8 x 3) from 24 x 1
         D_top = cpt_elas_mat(E(interfData(i).etop), nu);
-    if (biased)
-        nod_bot = topol(interfData(i).ebot,:);
-        nod_bot_face = interfData(i).bot;
-        coo_bot = coord(nod_bot,:);
-        dof_bot = 3*(nod_bot-1)+v3;
-        dof_bot = dof_bot(:);
-        sol_bot = sol(dof_bot);
-        D_bot = cpt_elas_mat(E(interfData(i).ebot), nu);
-    end
+
+%     if (biased)
+%         nod_bot = topol(interfData(i).ebot,:);
+%         nod_bot_face = interfData(i).bot;
+%         coo_bot = coord(nod_bot,:);
+%         dof_bot = 3*(nod_bot-1)+v3;
+%         dof_bot = dof_bot(:);
+%         sol_bot = sol(dof_bot);
+%         D_bot = cpt_elas_mat(E(interfData(i).ebot), nu);
+%     end
 
         % Store stress at Gauss points (Bathe - FEProcedures, 4.3.6, p.254)
         stress_gp = zeros(ngauss^2, 6);
         eps_gp = zeros(ngauss^2,6);
+        u_gp = zeros(ngauss^2,3);
         gp_idx = 1;
     
     
@@ -42,10 +54,12 @@ function [stress, eps] = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,
         xi = [csi,eta,theta];
         Nloc_top = cpt_shape_2D(coo_top,csi,eta,theta);
         X_top = ismember(Nloc_top*coo_top,coord(nod_top_face,:),'row');
-        if (biased)
-            Nloc_bot = cpt_shape_2D(coo_bot,csi,eta,theta);
-            X_bot = ismember(Nloc_bot*coo_bot,coord(nod_bot,:),'row');
-        end
+
+%         if (biased)
+%             Nloc_bot = cpt_shape_2D(coo_bot,csi,eta,theta);
+%             X_bot = ismember(Nloc_bot*coo_bot,coord(nod_bot,:),'row');
+%         end
+
         ID0 = (1:3)';
         for j = 1 : 3
             if (std(xi(X_top,j)) == 0)
@@ -54,31 +68,26 @@ function [stress, eps] = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,
                 ID_top = zeros(3,1);
                 ID_top(ID0~=xi_id_top) = 1:2;
             end
-            if (biased)
-                if (std(xi(X_bot,j)) == 0)
-                    xi_id_bot = j;
-                    xi_val_bot = mean(xi(X_bot,j));
-                    ID_bot = zeros(3,1);
-                    ID_bot(ID0~=xi_id_bot) = 1:2;
-                end
-            end
+%             if (biased)
+%                 if (std(xi(X_bot,j)) == 0)
+%                     xi_id_bot = j;
+%                     xi_val_bot = mean(xi(X_bot,j));
+%                     ID_bot = zeros(3,1);
+%                     ID_bot(ID0~=xi_id_bot) = 1:2;
+%                 end
+%             end
         end
 
         [nodes,~] = gausspoints(ngauss);
-% 
-%         ID_top = zeros(3,1);
-%         ID_top(ID0~=xi_id_top) = 1:2;
-%         ID_bot = zeros(3,1);
-%         ID_bot(ID0~=xi_id_bot) = 1:2;
-    
-    
+
         % Compute local contribuition on the top face (biased formulation)
         tmp_top = zeros(3,1);
         tmp_top(xi_id_top) = xi_val_top;
-        if (biased)
-            tmp_bot = zeros(3,1);
-            tmp_bot(xi_id_bot) = xi_val_bot;
-        end
+
+%         if (biased)
+%             tmp_bot = zeros(3,1);
+%             tmp_bot(xi_id_bot) = xi_val_bot;
+%         end
 
         for i1 = 1 : ngauss
             csi = nodes(i1);
@@ -89,10 +98,14 @@ function [stress, eps] = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,
                 tmp_top(ID_top==2) = eta;
 %                 tmp_bot(ID_bot==2) = eta;
 
-                [Bloc_top,~] = cpt_shape(coo_top,tmp_top(1),tmp_top(2),tmp_top(3),xi_id_top);        % shape derivatives 6x24
+                [Bloc_top,~] = cpt_shape(coo_top,tmp_top(1),tmp_top(2),tmp_top(3),xi_id_top);        % shape derivatives 6x24            [Nloc_top] = cpt_shape_2D(loc_coo_top,tmp_top(1),tmp_top(2),tmp_top(3)); % shape functions 1x8
+                [Nloc_top] = cpt_shape_2D(coo_top,tmp_top(1),tmp_top(2),tmp_top(3));                 % shape functions 1x8
+
                 loc_eps = Bloc_top * sol_top;
                 stress_gp(gp_idx,:) = (D_top*loc_eps)'; % 6x1 (or 6x3)
                 eps_gp(gp_idx,:) = loc_eps';
+                u_gp(gp_idx, :) = Nloc_top*sol_top_mat; % 1x8 * 8x3 --> 1x3
+
                 gp_idx = gp_idx + 1;
 
                 if (TEST)
@@ -103,6 +116,14 @@ function [stress, eps] = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,
                     fprintf("loc_eps = %s\n", mat2str(loc_eps));
                 end
             end
+        end
+
+        % TODO: use varargout, nargout to return stress in gauss points!
+        if nargout > 2
+            stress_gp_all{i} = stress_gp;
+        end
+        if nargout > 3
+            u_gp_all{i} = u_gp;
         end
 
         % Loop over the local nodes and add contribution to global nodes
@@ -122,63 +143,16 @@ function [stress, eps] = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,
             stress(n, :) = stress(n, :) / node_count(n);
         end
     end
+
+
+    % Return the requested outputs
+    varargout{1} = stress;
+    varargout{2} = eps;
+    
+    if nargout > 2
+        varargout{3} = stress_gp_all;
+    end
+    if nargout > 3
+        varargout{4} = u_gp_all;
+    end
 end
-
-
-
-% 
-%     [nodes,weights] = gausspoints(ngauss);
-%     ne = size(topol,1);
-%     nn = size(coord,1);
-%     stress = zeros(nn, 6);
-%     node_count = zeros(nn,1); % counter for averaging
-% 
-%     v3 = [1;2;3];
-%     for i = 1 : ne
-% 
-%         % Local stiffness matrix
-%         D = cpt_elas_mat(E(i),nu);
-% 
-%         % Extract topological information
-%         loc_nod = topol(i,:);
-%         loc_coo = coord(loc_nod,:);
-%         loc_dof = 3*(loc_nod-1)+v3;
-%         loc_dof = loc_dof(:);
-%         loc_sol = sol(loc_dof);
-% 
-%         % Store stress at Gauss points (Bathe - FEProcedures, 4.3.6, p.254)
-%         stress_gp = zeros(ngauss^3, 6);
-%         gp_idx = 1;
-% 
-%         % Evaluate stress ath each gauss point and store in stress_gp
-%         for i1 = 1 : ngauss
-%             csi = nodes(i1);
-%             for i2 = 1 : ngauss
-%                 eta = nodes(i2);
-%                 for i3 = 1 : ngauss
-%                     theta = nodes(i3);
-%                     [Bloc,detJ] = cpt_shape(loc_coo,csi,eta,theta);
-%                     % TODO: check if it's better to write the DOFs
-%                     % separately (loc_eps --> 6x3)
-%                     loc_eps = Bloc*loc_sol; % 6x24 * 24x1 --> 6x1 (or 6x3)
-% 
-%                     stress_gp(gp_idx,:) = (D*loc_eps)'; % 6x1 (or 6x3)
-%                     gp_idx = gp_idx + 1;
-%                 end
-%             end
-%         end
-%         % Loop over the local nodes and add contribution to global nodes
-%         for n = 1 : 8
-%             nod = loc_nod(n);
-%             % TODO: take only the closest gauss points (?)
-%             stress(nod,:) = stress(nod,:) + mean(stress_gp,1);
-%             node_count(nod) = node_count(nod) + 1;
-%         end
-%     end
-% 
-%     for i = 1:nn
-%         if node_count(i) > 0
-%             stress(i, :) = stress(i, :) / node_count(i);
-%         end
-%     end
-% end

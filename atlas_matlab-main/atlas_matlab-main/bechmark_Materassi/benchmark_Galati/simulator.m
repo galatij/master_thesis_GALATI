@@ -113,6 +113,19 @@ function [itGlo, convAll] = ...
             nodeScalarFields{9} = stress(:,4);
 
             % Fault data
+            nodeFieldNames{10} = 'sigma_n';
+            nodeFieldNames{11} = '|tau|';
+            nodeFieldNames{12} = 'duN';
+            nodeFieldNames{13} = 'duT1';
+            nodeFieldNames{14} = 'duT2';
+            nodeFieldNames{15} = '|duT|';
+            nodeScalarFields{10} = nan(nn,1);
+            nodeScalarFields{11} = nan(nn,1);
+            nodeScalarFields{12} = nan(nn,1);
+            nodeScalarFields{13} = nan(nn,1);
+            nodeScalarFields{14} = nan(nn,1);
+            nodeScalarFields{15} = nan(nn,1);
+            v3 = [1;2;3];
             nni = numel(nodePairsData);
             stress_interf = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu,sol);
             [sigma_n, sigma_t] = cpt_stress_interf(stress_interf, nodePairsData);
@@ -120,23 +133,18 @@ function [itGlo, convAll] = ...
                 n = nodePairsData(i).normal;
                 t1 = nodePairsData(i).t1;
                 t2 = nodePairsData(i).t2;
-                % TODO: extract t1, t2 tangential directions
-                nodeFieldNames{10} = 'sigma_n';
-                nodeFieldNames{11} = '|tau|';
-                nodeFieldNames{12} = 'duN';
-                nodeFieldNames{13} = 'duT1';
-                nodeFieldNames{14} = 'duT2';
-                nodeFieldNames{15} = '|duT|';
-                v3 = [1;2;3];
-                dof_top = 3*(nodePairsData(i).ntop-1)+v3;
-                dof_bot = 3*(nodePairsData(i).nbottom-1)+v3;
+                ntop = nodePairsData(i).ntop;
+                nbot = nodePairsData(i).nbottom;
+                dof_top = 3*(ntop-1)+v3;
+                dof_bot = 3*(nbot-1)+v3;
                 du = sol(dof_top(:)) - sol(dof_bot(:));
-                nodeScalarFields{10} = sigma_n(i);
-                nodeScalarFields{11} = norm(sigma_t(i,:));
-                nodeScalarFields{12} = du*n';
-                nodeScalarFields{13} = du*t1';
-                nodeScalarFields{14} = du*t2';
-                nodeScalarFields{15} = norm(nodeScalarFields{13}+nodeScalarFields{14});
+                nodeScalarFields{10}(ntop) = sigma_n(i);
+                nodeScalarFields{11}(ntop) = norm(sigma_t(i,:));
+                nodeScalarFields{12}(ntop) = n'*du;
+                nodeScalarFields{13}(ntop) = t1'*du;
+                nodeScalarFields{14}(ntop) = t2'*du;
+                nodeScalarFields{15}(ntop) = norm(nodeScalarFields{13}(ntop)...
+                                                 +nodeScalarFields{14}(ntop));
             end                
 
             cellFieldNames{1} = 'Material_ID';

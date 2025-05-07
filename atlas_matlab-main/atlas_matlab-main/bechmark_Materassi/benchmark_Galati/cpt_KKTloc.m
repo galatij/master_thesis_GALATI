@@ -83,8 +83,11 @@ function [KKT11,KKT12,KKT21,KKT22] = cpt_KKTloc(ngauss, coord, topol, interfData
             if (TEST)
                 sol_test = loc_coo_top';
                 sol_test = sol_test(:) + 1;
-                disp(gamma*Nloc_top.*nN*sol_test);
-                disp(P*sol_test);      % works correctly
+%                 disp(gamma*Nloc_top.*nN*sol_test);
+%                 disp(P*sol_test);      % works correctly
+                sigma = D_top*Bloc_top;
+                sigma_n = S_n*D_top*Bloc_top;
+                disp(sigma*sol_test)
             end
 
             % top-top (trial/test)
