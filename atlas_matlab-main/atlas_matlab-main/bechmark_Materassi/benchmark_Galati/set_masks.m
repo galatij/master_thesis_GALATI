@@ -1,7 +1,7 @@
-function masksP = set_masks(stress_n,stress_t, dsol, nodePairsData, gamma)
+function masksP = set_masks(stress_n,stress_t, dsol, nodePairsData, gamma, tol_P)
 
     nni = numel(nodePairsData);
-    
+    v3 = [1;2;3];
     Pn = zeros(nni, 1);
     Pt = zeros(nni,2);
     % needed for the pseudo-Jacobian

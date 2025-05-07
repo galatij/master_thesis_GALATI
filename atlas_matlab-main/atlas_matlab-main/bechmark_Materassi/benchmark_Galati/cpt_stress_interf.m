@@ -17,20 +17,6 @@ end
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 % 
 %     nni = numel(nodePairsData);
 %     sigma_n = zeros(nni,1);

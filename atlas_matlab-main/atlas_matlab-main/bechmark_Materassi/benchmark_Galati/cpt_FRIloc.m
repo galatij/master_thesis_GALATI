@@ -1,23 +1,27 @@
 function [FRIstick11,FRIstick12,FRIstick21,FRIstick22,FRIslide11,FRIslide12,FRIslide21,FRIslide22] = ...
-                    cpt_FRIloc(ngauss, coord, topol, interfData, nodePairsData, i, ...
-                    E, nu, gamma, alpha, phi, Pnu_gp, Ptu_gp, tol_P)
+                    cpt_FRIloc(ngauss, coord, topol, interfData, i, ...
+                    E, nu, gamma, alpha, phi, Pnu, Ptu)
     TEST = false;
     %% Extract data for face i
     n = interfData(i).normal;  % on the top face i have normal      Check: n or -n ??
     N = cpt_normal(n);
     S_n = n'*N;
-    t = ones(3,1) - n;
-    S_t = t'*N;
-    tT = repmat(t', 1, 8);
-    gamma = gamma/interfData(i).h;
     nN = repmat(n',1,8);
+
+    t1 = interfData(i).t1;
+    t2 = interfData(i).t1;
+    S_t1 = t1'*N;
+    S_t2 = t2'*N;
+    S_t = [S_t1; S_t2];
+    tT = repmat([t1, t2]', 1, 8);
+
+    gamma = gamma/interfData(i).h;
+
     if (TEST)
-        t1 = interfData(i).t1;
-        t2 = interfData(i).t1;
-        S_t1 = t1'*N;
-        S_t2 = t2'*N;
+        t = ones(3,1) - n;
+        S_t = t'*N;
+        tT = repmat(t', 1, 8);
         S_t = [S_t1; S_t2];
-        tT = repmat([t1, t2]', 1, 8);
     end
 
     % Extract the coordinates of top and bottom faces
@@ -76,7 +80,7 @@ function [FRIstick11,FRIstick12,FRIstick21,FRIstick22,FRIslide11,FRIslide12,FRIs
     tmp_top(xi_id_top) = xi_val_top;
     tmp_bot(xi_id_bot) = xi_val_bot;
 
-    gp_idx = 0; % counter for the gauss point
+    gp_idx = 1; % counter for the gauss point
 
     for i1 = 1 : ngauss
         csi = nodes(i1);
@@ -118,28 +122,51 @@ function [FRIstick11,FRIstick12,FRIstick21,FRIstick22,FRIslide11,FRIslide12,FRIs
             
 
             %% Sliding interface
-            
-            all_top_nod = [nodePairsData.ntop];
-            loc_nodes_interf = find(ismember([nodePairsData.ntop], top_nod));
-            
-%             if (norm(Ptu_loc) > 1e-6)
-%                 tt = Ptu_loc./norm(Ptu_loc);
+
+            % Prevent division by 0
+            eps = 1e-10;
+
+            Pnu_loc = Pnu(gp_idx);
+            Ptu_loc = Ptu(gp_idx,:)';
+            normPtu = norm(Ptu_loc);
+            normPtu3 = normPtu^3 + eps;
+            normPtu = normPtu + eps;
+
+%             if (normPtu > 1e-2)
+%                 ttt = Ptu(gp_idx)./normPtu^3;
 %             else
-%                 tt = zeros(4,1);
+%                 ttt = zeros(1,2);
 %             end
-%             tt = repelem(tt,3,1);
+%             if (normPtu > 1e-6)
+%                 tt = Ptu(gp_idx)./normPtu;
+%             else
+%                 tt = zeros(1,2);
+%             end
+%             tt = tt(:);
+%             ttt = ttt(:);
+
+            wJ = weights(i1)*weights(i2)*detJ;
+
+            trial_top = ( Pn.*(Ptu_loc/normPtu) + Pnu_loc * ( Pt/normPtu - Ptu_loc/normPtu3 * (Ptu_loc' * Pt) ) );
+            
+            trial_bot = ( (-gamma*Nloc_bot.*nN).*(Ptu_loc/normPtu)  ... % trial function bottom (first part)
+                    + Pnu_loc * ( (-gamma*Nloc_bot.*tT)/normPtu - Ptu_loc/normPtu3 * (Ptu_loc' * (-gamma*Nloc_bot.*tT)) ) );
+            
+            test_top = Ptalpha;
+            
+            test_bot = (-gamma*Nloc_bot.*tT);
 
             % top-top (trial/test)
-            FRIslide11 = FRIslide11 + ( phi/gamma*Ptalpha'*(Pn.*tT) + phi/gamma*Ptalpha'*(Pnu.*dtdu) )*weights(i1)*weights(i2)*detJ;
+            FRIslide11 = FRIslide11 + phi/gamma*test_top'*trial_top*wJ;
 
             % top-bottom
-            FRIslide12 = FRIslide12 + phi/gamma*Ptalpha'*(-gamma*Nloc_bot.*tT)*weights(i1)*weights(i2)*detJ;
+            FRIslide12 = FRIslide12 + phi/gamma*test_top'*trial_bot*wJ;
 
             % bottom-top
-            FRIslide21 = FRIslide21 + phi/gamma*(-gamma*Nloc_bot.*tT)'*Pt*weights(i1)*weights(i2)*detJ;
+            FRIslide21 = FRIslide21 + phi/gamma*test_bot'*trial_top*wJ;
 
             % bottom-bottom
-            FRIslide22 = FRIslide22 + phi/gamma*(-gamma*Nloc_bot.*tT)'*(-gamma*Nloc_bot.*tT)*weights(i1)*weights(i2)*detJ;
+            FRIslide22 = FRIslide22 + phi/gamma*test_bot'*trial_bot*wJ;
             
             %increment the counter
             gp_idx = gp_idx + 1;
