@@ -6,10 +6,10 @@ function [res,J] = cpt_Jacobian(ngauss,coord,topol,E, nu,...
     dsol0 = sol - state0;
     [stress,~, Pn_gp, Pt_gp] = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu,gamma,dsol0);          % nn*6
     [stress_n, stress_t] = cpt_stress_interf(stress, nodePairsData);
-    masksP = set_masks(stress_n,stress_t, dsol0, nodePairsData, gamma,tol_P);
+    masksP = set_masks(stress_n,stress_t, dsol0, nodePairsData, gamma, phi, tol_P);
 
     %% compute the residual at iteration k
-    [C0, KKT] = cpt_KKT(ngauss, coord, topol, E, nu, ...
+    [K0, KKT] = cpt_KKT(ngauss, coord, topol, E, nu, ...
                           interfData, nodePairsData, gamma, alpha, ...
                           dsol0, masksP);
 
@@ -18,9 +18,9 @@ function [res,J] = cpt_Jacobian(ngauss,coord,topol,E, nu,...
                          interfData, nodePairsData, gamma, alpha, phi, ...
                          dsol0, masksP, Pn_gp, Pt_gp);
 
-    res = (K - alpha*B) * dsol0 + C0 - rhs; % + F0
+    res = (K - alpha*B) * dsol0 + K0 - rhs; %+F0
 
-    J = K - alpha*B + KKT; % + FRI
+    J = K - alpha*B + KKT ;%+ FRI;
 
     [J,res] = DirBC(ndir,dir,zeros(ndir,1),J,res);
     

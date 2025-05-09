@@ -42,13 +42,6 @@ function [C_k, KKT] = cpt_KKT(ngauss,coord,topol,E, nu, ...
 %         KKTlist22(k:k+575,:) = [JJ_bot(:),II_bot(:),KKT22(:)];
         KKTlist22(k:k+575,:) = [II_bot(:),JJ_bot(:),KKT22(:)];
 
-%         if (TEST)
-%             disp("top dofs:");
-%             disp(top_dof');
-%             disp("bottom dofs:");
-%             disp(bot_dof');
-%             spy(KKT12);
-%         end
 
         k = k + 576;
                 
@@ -59,42 +52,7 @@ function [C_k, KKT] = cpt_KKT(ngauss,coord,topol,E, nu, ...
         + sparse(KKTlist21(:,2),KKTlist21(:,1),KKTlist21(:,3),3*nn,3*nn,size(KKTlist21,1)) ...
         + sparse(KKTlist22(:,2),KKTlist22(:,1),KKTlist22(:,3),3*nn,3*nn,size(KKTlist22,1));
 
-    
-%% Taking only test functions on top side
-
-%         % Compute contribution to the top face only (biased formulation)
-%         [KKTloc, KKTother] = cpt_KKTloc(ngauss, coord, topol, interfData, i, E, nu, gamma, alpha);
-%         assert(all(size(KKTloc) == [24, 24]), 'KKTloc size mismatch!');
-% 
-%         top_nod = topol(interfData(i).etop,:);
-%         bot_nod = topol(interfData(i).ebottom,:);
-%         top_dof = 3*(top_nod-1)+v3;
-%         top_dof = top_dof(:);
-%         [II_top,JJ_top] = meshgrid(top_dof);
-%         % TODO: rotate to map on the correct side
-%         KKTlist(k:k+575,:) = [JJ_top(:),II_top(:),KKTloc(:)];
-%         
-% 
-%         bot_dof = 3*(bot_nod-1)+v3;
-%         bot_dof = bot_dof(:);
-%         [II_bot,JJ_bot] = meshgrid(bot_dof, top_dof);
-%         KKTlist2(k:k+575,:) = [JJ_bot(:),II_bot(:),KKTother(:)];
-% %         KKTlist2(k:k+575,:) = [II_bot(:),JJ_bot(:),KKTother(:)];
-%         assert(all(size(KKTloc) == [24, 24]), 'KKTloc size mismatch!');
-%         if (alpha == 1)
-%             assert(norm(KKTloc-KKTloc', 'fro') < 1.e-6, 'KKTloc not symmetric!');
-%             % assert(norm(KKTother-KKTother', 'fro') == 0, 'KKTother not symmetric!');
-%         end
-%         k = k + 576;
-%                 
-%     end
-%     KKT = sparse(KKTlist(:,1),KKTlist(:,2),KKTlist(:,3),3*nn,3*nn,size(KKTlist,1));
-%     KKT = KKT + sparse(KKTlist2(:,1),KKTlist2(:,2),KKTlist2(:,3),3*nn,3*nn,size(KKTlist2,1));
-%     assert(~isempty(KKT(7,1)), 'Wrong mapping from local to global!')
-%     
-% %     assert(norm(KKT - KKT', 'fro') < 1.e-12, "KKT is NOT symmetric!")
-% 
-     C_k = KKT * dsol;
+    C_k = KKT * dsol;
     
     % Take the positive part
     % map nni -> global dofs
@@ -118,11 +76,6 @@ function [C_k, KKT] = cpt_KKT(ngauss,coord,topol,E, nu, ...
     %%% e.g. take any value in the convex hull of the subdifferential, e.g.
     %%% 0.5 of the computed value
     KKT(constrained_dof0, constrained_dof0) = 0.5*KKT(constrained_dof0, constrained_dof0);
-%     figure(2)
-%     spy(KKT)
 
-    if any(isnan(KKT(:))) || any(isinf(KKT(:)))
-        error('KKT contains NaN or Inf values!');
-    end
 
 end

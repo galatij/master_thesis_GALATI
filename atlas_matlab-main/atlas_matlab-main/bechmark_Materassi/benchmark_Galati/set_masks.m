@@ -1,4 +1,4 @@
-function masksP = set_masks(stress_n,stress_t, dsol, nodePairsData, gamma, tol_P)
+function masksP = set_masks(stress_n,stress_t, dsol, nodePairsData, gamma, phi, tol_P)
 
     nni = numel(nodePairsData);
     v3 = [1;2;3];

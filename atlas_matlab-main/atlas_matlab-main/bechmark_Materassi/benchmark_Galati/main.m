@@ -2,7 +2,7 @@ clc;
 close all;
 clear;
 
-TEST = false;
+TEST = true;
 TEST1 = false;
 % NOTE
 % ur = uB - uT
@@ -37,6 +37,7 @@ tol_duT = 1.e-5 * 1e-2;
 tol_P = 1.e-6;
 cohes = 0.0;
 phi = 30.0/180.0*pi;
+phi = 0;
 
 %% Create the mesh
 nx = 16;

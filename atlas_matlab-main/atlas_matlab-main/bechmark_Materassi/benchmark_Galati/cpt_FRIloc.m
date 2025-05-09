@@ -1,34 +1,37 @@
-function [FRIstick11,FRIstick12,FRIstick21,FRIstick22,FRIslide11,FRIslide12,FRIslide21,FRIslide22] = ...
+function [FRIstick11,FRIstick12,FRIstick21,FRIstick22, ...
+            FRIslide11,FRIslide12,FRIslide21,FRIslide22, ...
+            RESstick_top, RESstick_bot, RESslide_top, RESslide_bot] = ...
                     cpt_FRIloc(ngauss, coord, topol, interfData, i, ...
-                    E, nu, gamma, alpha, phi, Pnu, Ptu)
-    TEST = false;
+                        E, nu, gamma, alpha, phi, Pnu, Ptu, dsol)
+
+    TEST = true;
+    v3 = [1;2;3];
+
     %% Extract data for face i
-    n = interfData(i).normal;  % on the top face i have normal      Check: n or -n ??
-    N = cpt_normal(n);
-    S_n = n'*N;
-    nN = repmat(n',1,8);
+    n = interfData(i).normal;   % on the top face i have normal      Check: n or -n ??
+    nN = repmat(n',1,8);        % to take the normal displacement
 
     t1 = interfData(i).t1;
-    t2 = interfData(i).t1;
-    S_t1 = t1'*N;
-    S_t2 = t2'*N;
-    S_t = [S_t1; S_t2];
+    t2 = interfData(i).t2;
     tT = repmat([t1, t2]', 1, 8);
 
-    gamma = gamma/interfData(i).h;
+    S_n = n' * cpt_normal(n);    % 1x6
+    S_t1 = t1' * cpt_normal(t1); % 1x6
+    S_t2 = t2' * cpt_normal(t2); % 1x6
+    S_t  = [S_t1; S_t2];         % 2x6
 
-    if (TEST)
-        t = ones(3,1) - n;
-        S_t = t'*N;
-        tT = repmat(t', 1, 8);
-        S_t = [S_t1; S_t2];
-    end
+    gamma = gamma/interfData(i).h;
 
     % Extract the coordinates of top and bottom faces
     loc_coo_top = coord(topol(interfData(i).etop,:),:);
     loc_coo_bot = coord(topol(interfData(i).ebottom,:),:);
     top_nod = interfData(i).top;
     bot_nod = interfData(i).bottom;
+
+    top_dof = 3*(topol(interfData(i).etop,:)-1)+v3;
+    top_dof = top_dof(:);
+    bot_dof = 3*(topol(interfData(i).ebottom,:)-1)+v3;
+    bot_dof = bot_dof(:);
 
     % Compute the elasticity tensor related to the top element
     D_top = cpt_elas_mat(E(interfData(i).etop), nu);
@@ -58,7 +61,6 @@ function [FRIstick11,FRIstick12,FRIstick21,FRIstick22,FRIslide11,FRIslide12,FRIs
 
     [nodes,weights] = gausspoints(ngauss);
 
-    % TODO: same for bottom face!!!
     ID0 = (1:3)';
     ID_top = zeros(3,1);
     ID_top(ID0~=xi_id_top) = 1:2;
@@ -66,14 +68,27 @@ function [FRIstick11,FRIstick12,FRIstick21,FRIstick22,FRIslide11,FRIslide12,FRIs
     ID_bot(ID0~=xi_id_bot) = 1:2;
     
     %% Compute local contribuition on the top face (biased formulation)
+
+    % Preallocate local matrices and res vectors
     FRIstick11 = zeros(24,24);
     FRIstick12 = zeros(24,24);
     FRIstick21 = zeros(24,24);
     FRIstick22 = zeros(24,24);
-    FRIslide11 = zeros(24,24);
-    FRIslide12 = zeros(24,24);
-    FRIslide21 = zeros(24,24);
-    FRIslide22 = zeros(24,24);
+
+    FRIslide1_11 =  zeros(24,24);
+    FRIslide1_12 =  zeros(24,24);
+    FRIslide1_21 =  zeros(24,24);
+    FRIslide1_22 =  zeros(24,24);
+    
+    FRIslide2_11 =  zeros(24,24);
+    FRIslide2_12 =  zeros(24,24);
+    FRIslide2_21 =  zeros(24,24);
+    FRIslide2_22 =  zeros(24,24);
+
+    RESstick_top = zeros(24,1);
+    RESstick_bot = zeros(24,1);
+    RESslide_top = zeros(24,1);
+    RESslide_bot = zeros(24,1);
 
     tmp_top = zeros(3,1);
     tmp_bot = zeros(3,1);
@@ -96,81 +111,87 @@ function [FRIstick11,FRIstick12,FRIstick21,FRIstick22,FRIslide11,FRIslide12,FRIs
             Nloc_top = repelem(Nloc_top,1,3); % shape functions 1x24
             Nloc_bot = repelem(Nloc_bot,1,3);
             
-            Pn = gamma*Nloc_top.*nN - (S_n*D_top*Bloc_top);                 % P 1x24
+            if (TEST)
+
+            end
+            Pn = gamma*Nloc_top.*nN - (S_n*D_top*Bloc_top);                 % 1x24
             Pnalpha = gamma*Nloc_top.*nN - alpha*(S_n*D_top*Bloc_top);
-            Pt = gamma*Nloc_top.*tT - (S_t*D_top*Bloc_top);
+            Pt = gamma*Nloc_top.*tT - (S_t*D_top*Bloc_top);                 % 2x24
             Ptalpha = gamma*Nloc_top.*tT - alpha*(S_t*D_top*Bloc_top);
             
-            if (TEST)
-                sol_test = loc_coo_top';
-                sol_test = sol_test(:) + 1;
-                disp(gamma*Nloc_top.*nN*sol_test);
-                disp(P*sol_test);      % works correctly
-            end
+            wJ = weights(i1)*weights(i2)*detJ;
 
-            % top-top (trial/test)
-            FRIstick11 = FRIstick11 + 1/gamma*Ptalpha'*Pt*weights(i1)*weights(i2)*detJ;
-            
-            % top-bottom
-            FRIstick12 = FRIstick12 + 1/gamma*Ptalpha'*(-gamma*Nloc_bot.*tT)*weights(i1)*weights(i2)*detJ;
+            %% Sticking (RMK: F0 = FRIstick*u in case 2.1)
 
-            % bottom-top
-            FRIstick21 = FRIstick21 + 1/gamma*(-gamma*Nloc_bot.*tT)'*Pt*weights(i1)*weights(i2)*detJ;
+            % local Jacobian (stick)
+            FRIstick11 = FRIstick11 + 1/gamma*Ptalpha'*Pt*wJ; % top-top (trial/test)
+            FRIstick12 = FRIstick12 + 1/gamma*Ptalpha'*(-gamma*Nloc_bot.*tT)*wJ; % top-bottom
+            FRIstick21 = FRIstick21 + 1/gamma*(-gamma*Nloc_bot.*tT)'*Pt*wJ; % bottom-top
+            FRIstick22 = FRIstick22 + 1/gamma*(-gamma*Nloc_bot.*tT)'*(-gamma*Nloc_bot.*tT)*wJ; % bottom-bottom
 
-            % bottom-bottom
-            FRIstick22 = FRIstick22 + 1/gamma*(-gamma*Nloc_bot.*tT)'*(-gamma*Nloc_bot.*tT)*weights(i1)*weights(i2)*detJ;
+            % residual (stick)
+            RESstick_top = RESstick_top + FRIstick11*dsol(top_dof) + FRIstick21*dsol(bot_dof); % top
+            RESstick_bot = RESstick_bot + FRIstick12*dsol(top_dof) + FRIstick22*dsol(bot_dof); % bottom
             
 
-            %% Sliding interface
-
+            %% Sliding (RMK: F0 = FRIslide(1st part only)*u)
+            
             % Prevent division by 0
             eps = 1e-10;
-
+            
+            % Evaluate Pn and Pt at the previous iter in the gauss point
             Pnu_loc = Pnu(gp_idx);
             Ptu_loc = Ptu(gp_idx,:)';
             normPtu = norm(Ptu_loc);
             normPtu3 = normPtu^3 + eps;
             normPtu = normPtu + eps;
 
-%             if (normPtu > 1e-2)
-%                 ttt = Ptu(gp_idx)./normPtu^3;
-%             else
-%                 ttt = zeros(1,2);
-%             end
-%             if (normPtu > 1e-6)
-%                 tt = Ptu(gp_idx)./normPtu;
-%             else
-%                 tt = zeros(1,2);
-%             end
-%             tt = tt(:);
-%             ttt = ttt(:);
-
-            wJ = weights(i1)*weights(i2)*detJ;
-
-            trial_top = ( Pn.*(Ptu_loc/normPtu) + Pnu_loc * ( Pt/normPtu - Ptu_loc/normPtu3 * (Ptu_loc' * Pt) ) );
+            trial_top1 = Pn.*(Ptu_loc/normPtu); % trial function top (first part)
+            trial_top2 = Pnu_loc * ( Pt/normPtu - Ptu_loc/normPtu3 * (Ptu_loc' * Pt) ); % trial function top (second part)
             
-            trial_bot = ( (-gamma*Nloc_bot.*nN).*(Ptu_loc/normPtu)  ... % trial function bottom (first part)
-                    + Pnu_loc * ( (-gamma*Nloc_bot.*tT)/normPtu - Ptu_loc/normPtu3 * (Ptu_loc' * (-gamma*Nloc_bot.*tT)) ) );
+            trial_bot1 = (-gamma*Nloc_bot.*nN).*(Ptu_loc/normPtu); % trial function bottom (first part)
+            trial_bot2 = Pnu_loc * ( (-gamma*Nloc_bot.*tT)/normPtu ...
+                - Ptu_loc/normPtu3 * (Ptu_loc' * (-gamma*Nloc_bot.*tT))  ); % trial function bottom (second part)
             
             test_top = Ptalpha;
             
             test_bot = (-gamma*Nloc_bot.*tT);
 
-            % top-top (trial/test)
-            FRIslide11 = FRIslide11 + phi/gamma*test_top'*trial_top*wJ;
+            % first part of the Jacobian
+            FRIslide1_11 = FRIslide1_11 + phi/gamma * test_top' * trial_top1 * wJ; % top-top (trial/test)
+            FRIslide1_12 = FRIslide1_12 + phi/gamma * test_top' * trial_bot1 * wJ; % top-bottom
+            FRIslide1_21 = FRIslide1_21 + phi/gamma * test_bot' * trial_top1 * wJ; % bottom-top
+            FRIslide1_22 = FRIslide1_22 + phi/gamma * test_bot' * trial_bot1 * wJ; % bottom-bottom
 
-            % top-bottom
-            FRIslide12 = FRIslide12 + phi/gamma*test_top'*trial_bot*wJ;
+            % residual
+            RESslide_top = RESslide_top + FRIslide1_11*dsol(top_dof) + FRIslide1_21*dsol(bot_dof); % top
+            RESslide_bot = RESslide_bot + FRIslide1_12*dsol(top_dof) + FRIslide1_22*dsol(bot_dof); % bottom
 
-            % bottom-top
-            FRIslide21 = FRIslide21 + phi/gamma*test_bot'*trial_top*wJ;
-
-            % bottom-bottom
-            FRIslide22 = FRIslide22 + phi/gamma*test_bot'*trial_bot*wJ;
+            % second part of the jacobian (accounting for dtdu)
+            FRIslide2_11 = FRIslide2_11 + phi/gamma*test_top'*trial_top2*wJ; % top-top (trial/test)
+            FRIslide2_12 = FRIslide2_12 + phi/gamma*test_top'*trial_bot2*wJ; % top-bottom
+            FRIslide2_21 = FRIslide2_21 + phi/gamma*test_bot'*trial_top2*wJ; % bottom-top
+            FRIslide2_22 = FRIslide2_22 + phi/gamma*test_bot'*trial_bot2*wJ; % bottom-bottom
             
-            %increment the counter
+            % increment the counter
             gp_idx = gp_idx + 1;
+
         end
     end
-    
+    FRIslide11 = FRIslide1_11 + FRIslide2_11;
+    FRIslide12 = FRIslide1_12 + FRIslide2_12;
+    FRIslide21 = FRIslide1_21 + FRIslide2_21;
+    FRIslide22 = FRIslide1_22 + FRIslide2_22;
 end
+
+%             % top-top (trial/test)
+%             FRIslide11 = FRIslide11 + phi/gamma*test_top'*trial_top*wJ;
+% 
+%             % top-bottom
+%             FRIslide12 = FRIslide12 + phi/gamma*test_top'*trial_bot*wJ;
+% 
+%             % bottom-top
+%             FRIslide21 = FRIslide21 + phi/gamma*test_bot'*trial_top*wJ;
+% 
+%             % bottom-bottom
+%             FRIslide22 = FRIslide22 + phi/gamma*test_bot'*trial_bot*wJ;
