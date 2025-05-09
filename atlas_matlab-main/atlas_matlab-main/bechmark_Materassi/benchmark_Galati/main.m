@@ -2,8 +2,8 @@ clc;
 close all;
 clear;
 
-TEST = true;
-TEST1 = false;
+TEST = false;
+TEST1 = true;
 % NOTE
 % ur = uB - uT
 % normal: from T to B
@@ -13,7 +13,7 @@ TEST1 = false;
 ngauss = 2;
 
 % Elastic parameters
-E0 = 1; % MPa
+E0 = 25000; % MPa
 % E = zeros(ne,1) + E0;
 nu = 0.;
 
@@ -25,7 +25,8 @@ gamma = 10*E0;  % TODO: modify gamma_h
 
 % Newton-Raphson parameters
 itmax_NR = 20 * 100;
-tol_NR = [1.e-7,1.e-11];
+tol_NR = [1.e-2,1.e-3];
+% tol_NR = [1.e-7,1.e-11];
 noConvItMax = 4;
 maxBackStep = 4;
 
