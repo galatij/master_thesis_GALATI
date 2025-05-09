@@ -15,13 +15,16 @@ Master thesis on Coulomb friction at the interface of faults.
 ### DONE:
 1. completed the implementation of semi-smooth Newton for KKT conditions only
 2. debugged cpt_normal.m, nodeManager.m, cpt_stress.m.
+3. debugged the imposition of KKT condition: 
+  - works properly for the mesh defined for TEST1 flag, E0 = 25000
+  - does not work for the smallest mesh and for E0 = 1
+  - converges in very few iterations
+4. implemented the imposition of Coulomb friction
 
 ### TODO: 
-1. choose where to compute/store sigma(u) at the interface
-2. debug cpt_stress_interf.m
-3. debug cpt_Gloc.m, assemble_B.m (linear terms, assembled in main.m)
-4. debug cpt_KKTloc.m, cpt_KKT.m, cpt_Jacobian.m
-4. keep going with the friction term (it should be similar to the KKT term)
+1. debug FRI
+2. refactory in order to modify the previous Jacobian without recomputing the whole matrices
+3. store, at each time step, informations for nplas and tplas
 
 ### REMARKS:
 Notice that I am using the biased formulation, for which the integral over the interface is performed only on one side of the interface. Thus I am modifying only the DOFs related to the "top (or slave)" part of the interface. The jump is accounted for by taking, through nodeManager, the value of the displacement on the two corresponding nodes at the interface, but at the end only the rows related to the TOP part are assembled. 
