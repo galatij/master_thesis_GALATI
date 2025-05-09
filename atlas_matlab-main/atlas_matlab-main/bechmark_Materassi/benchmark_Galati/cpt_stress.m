@@ -40,10 +40,9 @@ function varargout = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu
         n = nodePairsData(i).normal;
         t1 = nodePairsData(i).t1;
         t2 = nodePairsData(i).t2;
-        N = cpt_normal(n);
-        S_n = n'*N;
-        S_t1 = t1'*N;
-        S_t2 = t2'*N;
+        S_n = n'*cpt_normal(n);
+        S_t1 = t1'*cpt_normal(t1);
+        S_t2 = t2'*cpt_normal(t2);
 
 %     if (biased)
 %         D_bot = cpt_elas_mat(E(interfData(i).ebot), nu);
