@@ -5,12 +5,14 @@ Master thesis on Coulomb friction at the interface of faults.
 ### Modified and implemented functions:
 - cpt_normal.m: returns N s.t. i can do \sigma * n as (N D Bloc), and then to get the normal stress \sigma_n i do (n' N D Bloc)
 - cpt_Gloc.m and assemble_B.m: to assemble the second linear matrix
-- cpt_KKTloc.m and cpt_KKT.m: to assemble the Jacobian and the residual contributions related to the KKT conditions, to be used in the Newton solver. TODO:
-  - choose where to cpt sigman(u) and where to store it (if needed) for the computation of Pgamma(u);
-  - modify KKT matrix (for the Jacobian) depending of maskP, applying a choice for semi-smooth Newton
-- cpt_Jacobian.m: to compute the Jacobian (and the residual), to be used inside newton_solver.m. It will incorporate the linear contributions (assembled in the main) and the two non-linear terms, the first related to KKT conditions and the second related to Coulomb friction.
-- cpt_stress.m: to compute the stress at the interface, given the solution u at iteration k. Needed for the computation of Pgamma(u) in both the nonlinear terms. Notice that i am averaging the stress on the gauss points of the faces sharing the node, as suggested by Bathe - Finite Elements Procedures (2006).
+- cpt_KKTloc.m and cpt_KKT.m: to assemble the Jacobian and the residual contributions related to the KKT conditions, to be used in the Newton solver.
+- cpt_FRIloc.m and cpt_FRI.m: assemble the Frictional Integral (Jacobian and Residual)
+- cpt_Jacobian.m: to compute the Jacobian (and the residual), to be used inside newton_solver.m. It incorporates the linear contributions (assembled in the main) and the two non-linear terms, the first related to KKT conditions and the second related to Coulomb friction.
+- cpt_stress.m: given the solution u at iteration k, compute the stress at the interface nodes (top only, biased formulation) and optionally evaluate the "modified stress" Pn, Pt at the gauss points, needed for the computation of the Jacobian. Notice that i am averaging the stress on the gauss points of the faces sharing the node, as suggested by Bathe - Finite Elements Procedures (2006).
 - cpt_stress_interf.m: to take the normal traction and the tangential tractions at the interface.
+- cpt_stress_tot.m: compute the stress in each element. Used only for post-processing. A refactoring may be useful since it shares mosto of the code with cpt_stress.m.
+- expand_dofs.m: used in setContactMode.m. The masks for the mode (slip, stick, non-smooth case etc.) are given in each interface node. Each node is related to 3 DOFs in the matrix, but actually also other dofs contribute to the Jacobian. Hence it maps the dofs of the node to the dofs engaged in the Jacobian computation.
+- setContactMode.m: after the computation of the different contributions to the Jacobian, it selects the right one (stick, slip, 0 or non-smooth case) depending on the masks computed with the previous solution. It implements the semi-smooth part of Newton.
 
 ### DONE:
 1. completed the implementation of semi-smooth Newton for KKT conditions only

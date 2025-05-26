@@ -1,4 +1,10 @@
 function varargout = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu,gamma,sol)
+%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     Evaluate the stress and eps at the interface nodes (top side).
+%     Optionally evaluate the "modified stress" Pn(u), Pt(u) at the
+%     gauss points, to evaluate the Jacobian at the previous iteration.
+%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
     TEST = false;
 
 %     biased = false;
