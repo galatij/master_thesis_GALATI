@@ -91,7 +91,7 @@ function [KKT11,KKT12,KKT21,KKT22] = cpt_KKTloc(ngauss, coord, topol, interfData
                 disp(sigma*sol_test)
             end
 
-            % top-top (trial/test)
+            % top-top (test/trial)
             KKT11 = KKT11 + 1/gamma*Palpha'*P*weights(i1)*weights(i2)*detJ;
             
             % CHECK: maybe i need to reorder the bottom dofs!!!

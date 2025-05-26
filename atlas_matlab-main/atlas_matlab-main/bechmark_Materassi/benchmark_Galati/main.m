@@ -15,7 +15,7 @@ ngauss = 2;
 % Elastic parameters
 E0 = 25000; % MPa
 % E = zeros(ne,1) + E0;
-nu = 0.;
+nu = 0.3;
 
 lambda = E0*nu/((1+nu)*(1-2*nu));
 % mu = E0/2/(1+nu)
@@ -38,7 +38,6 @@ tol_duT = 1.e-5 * 1e-2;
 tol_P = 1.e-6;
 cohes = 0.0;
 phi = 30.0/180.0*pi;
-phi = 0;
 
 %% Create the mesh
 nx = 16;
@@ -57,9 +56,9 @@ if (TEST)
     Lz = 4;
 end
 if (TEST1)
-    nx = 8;
-    ny = 8;
-    nz = 8;
+    nx = 2;
+    ny = 4;
+    nz = 4;
     Lx = 1;
     Ly = 8;
     Lz = 8;
@@ -182,32 +181,32 @@ bound(2).values = zeros(bound(2).nf,3) + [-2,0,0];              % imposition of 
 [B] = assemble_B(ngauss,coord,topol,E,nu, ...
                  interf, interfData, gamma);
 if (TEST)
-%     % spy(K);
-%     v3 = [1;2;3];
-%     %spy(B);
-%     interf_nod = [nodePairsData.ntop, nodePairsData.nbottom];
-%     interf_nod = sort(interf_nod);
-%     interf_dof = 3*(interf_nod-1)+v3;
-%     interf_dof = interf_dof(:)';
-%     B_full = full(B);
-%     eigB = eig(B_full);
-%     % disp(min(eigB));
-%     sumB = sum(B, 2);
-%     % disp(sumB);
-% 
-%     % benchmark_linear: u = @(x)x --> eps(u) = [1;1;1;0;0;0];
-%     u = zeros(3*nn,1);
-%     u(1:3:3*nn-2) = coord(:,1);
-%     u(2:3:3*nn-1) = coord(:,2);
-%     u(3:3:3*nn) = coord(:,3);
-%     result1 = B*u;
-%     % result2 = B_cmp*ones(3*nn,1);
-%     D = cpt_elas_mat(E0,nu);
-%     % disp(D)
-%     % cpt_stress and cpt_stress_interf
-%     [stress, eps] = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu,u);
-%     [s_n, s_t] = cpt_stress_interf(stress,nodePairsData);
-% 
+    % spy(K);
+    v3 = [1;2;3];
+    %spy(B);
+    interf_nod = [nodePairsData.ntop, nodePairsData.nbottom];
+    interf_nod = sort(interf_nod);
+    interf_dof = 3*(interf_nod-1)+v3;
+    interf_dof = interf_dof(:)';
+    B_full = full(B);
+    eigB = eig(B_full);
+    % disp(min(eigB));
+    sumB = sum(B, 2);
+    % disp(sumB);
+
+    % benchmark_linear: u = @(x)x --> eps(u) = [1;1;1;0;0;0];
+    u = zeros(3*nn,1);
+    u(1:3:3*nn-2) = coord(:,1);
+    u(2:3:3*nn-1) = coord(:,2);
+    u(3:3:3*nn) = coord(:,3);
+    result1 = B*u;
+    % result2 = B_cmp*ones(3*nn,1);
+    D = cpt_elas_mat(E0,nu);
+    % disp(D)
+    % cpt_stress and cpt_stress_interf
+    [stress, eps] = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu,gamma,u); %%%%%%%%%%%%%%
+    [s_n, s_t] = cpt_stress_interf(stress,nodePairsData);
+
 %     % benchmark periodic: u = @(x,y,z)[sin(x), sin(y), sin(z)]
 %     u = zeros(3*nn,1);
 %     u(1:3:3*nn-2) = sin(coord(:,2));
@@ -218,33 +217,34 @@ if (TEST)
 %     figure(1)
 %     spy(K)
 %     figure(2)
-% spy(B)
-% 
-% 
-    % global assembly
-    u = ones(3*nn,1);
-    r = B*u;
-    assert(norm(r) < 1e-12);                %% pass: stress is null everywhere
-    
-    % u = [x,0,0] --> grad(u) = [1;0;0;0;0;0]' --> sigma_n only along x
-    u = zeros(3*nn,1);
-    u(1:3:3*nn-2) = coord(:,1);
-    Bu1 = B*u;
+%     spy(B)
 
-    % u = [x,y,z] should give the same result of u = [x,0,0]
-    u(2:3:3*nn-1) = coord(:,2);
-    u(3:3:3*nn) = coord(:,3);
-    Bu2 = B*u;
-    assert(norm(Bu1-Bu2) < 1e-12);          %% pass
-    assert(norm(B - B', 'fro') < 1e-12)     %% pass
+    % Test with nu = 0:
+    if (nu==0)
+        % global assembly
+        u = ones(3*nn,1);
+        r = B*u;
+        assert(norm(r) < 1e-12);                %% pass: stress is null everywhere
+    
+        % u = [x,0,0] --> grad(u) = [1;0;0;0;0;0]' --> sigma_n only along x
+        u = zeros(3*nn,1);
+        u(1:3:3*nn-2) = coord(:,1);
+        Bu1 = B*u;
+    
+        % u = [x,y,z] should give the same result of u = [x,0,0]
+        u(2:3:3*nn-1) = coord(:,2);
+        u(3:3:3*nn) = coord(:,3);
+        Bu2 = B*u;
+        assert(norm(Bu1-Bu2) < 1e-12);          %% not passed!!!
+        assert(norm(B - B', 'fro') < 1e-12)     %% pass
+    end
 end
 
 nrm_fault = [1;0;0];
 
 
 %% Initial condition
-sol_u = zeros(3*nn,1);  % unnecessary, reassigned in simulator as sol0
-state0 = sol_u;
+state0 = zeros(3*nn,1);  % unnecessary, reassigned in simulator as sol0
 areai = zeros(ni,1);
 
 % For rotation on the fault, check if needed for Nitsche

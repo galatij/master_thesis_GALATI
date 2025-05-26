@@ -23,16 +23,16 @@ function masksP = set_masks(stress_n,stress_t, dsol, nodePairsData, gamma, phi, 
         Pt(i,2) = gamma*(dsol(top_dof) - dsol(bot_dof))'*t2 - stress_t(top_nod_loc,2);
         normPt = vecnorm(Pt,2,2);
 
-        if (Pn(i) <= -tol_P) % open ---> F(maskPnneg) = 0
-            masksP.nneg(i) = true;
-        elseif (abs(Pn(i)) < tol_P) % non-smooth case 1 ---> F(maskPn0) = 0, FRI(pn0,pn0) = ... 
+        if (abs(Pn(i)) < tol_P) % non-smooth case 1 ---> F(maskPn0) = 0, FRI(pn0,pn0) = ... 
             masksP.n0(i) = true;
+        elseif (Pn(i) <= -tol_P) % open ---> F(maskPnneg) = 0
+            masksP.nneg(i) = true;
         else % not open
             masksP.npos(i) = true;
-            if (normPt(i) - phi*Pn(i) < -tol_P) % sticking ---> FRI(...) = sth (easy term)
-                masksP.tstick(i) = true;
-            elseif (abs(normPt(i) - phi*Pn(i)) < tol_P) % non-smooth case 2 --> they're almost the same, so just take the easiest one (?) 
+            if (abs(normPt(i) - phi*Pn(i)) < tol_P) % non-smooth case 2 --> they're almost the same, so just take the easiest one (?) 
                 masksP.t0(i) = true;
+            elseif (normPt(i) - phi*Pn(i) <= -tol_P) % sticking ---> FRI(...) = sth (easy term)
+                masksP.tstick(i) = true;
             else % sliding --> FRI() = sth (difficult term)
                 masksP.tslide(i) = true;
             end

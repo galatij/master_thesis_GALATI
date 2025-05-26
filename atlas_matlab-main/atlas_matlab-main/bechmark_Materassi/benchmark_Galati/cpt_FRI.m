@@ -36,10 +36,12 @@ function [F0, FRI] = cpt_FRI(ngauss,coord,topol,E, nu, ...
         [II_top,JJ_top] = meshgrid(top_dof);
         FRIstickList(k_base + (1:576), :) = [JJ_top(:), II_top(:), FRIstick11(:)];
 
-        [II_bot,JJ_top] = meshgrid(bot_dof, top_dof);
+%         [II_bot,JJ_top] = meshgrid(bot_dof, top_dof);
+        [II_bot,JJ_top] = meshgrid(top_dof, bot_dof);
         FRIstickList(k_base + (1:576)+576, :) = [JJ_top(:), II_bot(:), FRIstick12(:)];
 
-        [II_top,JJ_bot] = meshgrid(top_dof, bot_dof);
+%         [II_top,JJ_bot] = meshgrid(top_dof, bot_dof);
+        [II_top,JJ_bot] = meshgrid(bot_dof, top_dof);
         FRIstickList(k_base + (1:576)+2*576, :) = [JJ_bot(:), II_top(:), FRIstick21(:)];
 
         [II_bot,JJ_bot] = meshgrid(bot_dof);
@@ -49,10 +51,12 @@ function [F0, FRI] = cpt_FRI(ngauss,coord,topol,E, nu, ...
         [II_top,JJ_top] = meshgrid(top_dof);
         FRIslideList(k_base + (1:576), :) = [JJ_top(:), II_top(:), FRIslide11(:)];
 
-        [II_bot,JJ_top] = meshgrid(bot_dof, top_dof);
+%         [II_bot,JJ_top] = meshgrid(bot_dof, top_dof);
+        [II_bot,JJ_top] = meshgrid(top_dof, bot_dof);
         FRIslideList(k_base + (1:576)+576, :) = [JJ_top(:), II_bot(:), FRIslide12(:)];
 
-        [II_top,JJ_bot] = meshgrid(top_dof, bot_dof);
+%         [II_top,JJ_bot] = meshgrid(top_dof, bot_dof);
+        [II_top,JJ_bot] = meshgrid(bot_dof, top_dof);
         FRIslideList(k_base + (1:576)+2*576, :) = [JJ_bot(:), II_top(:), FRIslide21(:)];
 
         [II_bot,JJ_bot] = meshgrid(bot_dof);
@@ -76,7 +80,8 @@ function [F0, FRI] = cpt_FRI(ngauss,coord,topol,E, nu, ...
 
     [F0, FRI] = setContactMode(FRIstick, FRIslide, F0stick, F0slide, masksP, nodePairsData);
 
-    
+%     fprintf("||F0|| = %f\n", norm(F0));
+%     fprintf("||FRI|| = %f\n", norm(FRI, 'fro'));
 
 end
 
