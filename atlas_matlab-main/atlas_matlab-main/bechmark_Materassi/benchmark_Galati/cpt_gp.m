@@ -1,4 +1,4 @@
-function varargout = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu,gamma,sol)
+function [Pn_gp, Pt_gp] = cpt_gp(ngauss,coord,topol,interfData,nodePairsData,E,nu,gamma,sol)
 %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     Evaluate the stress and eps at the interface nodes (top side).
 %     Optionally evaluate the "modified stress" Pn(u), Pt(u) at the
@@ -11,15 +11,13 @@ function varargout = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu
 
     ni = numel(interfData); % number of interface faces
     nni = numel(nodePairsData); % number of nodes at the interface
-    stress = zeros(nni,6); % stress in each top node
-    eps = zeros(nni,6); % strain in each top node
     node_count = zeros(nni,1); % counter for averaging
 
     v3 = [1;2;3];
-    if nargout > 2
-        Pn_gp = cell(ni,1); % for each face, store the stress in each gauss point
-        Pt_gp = cell(ni,1); % for each face, interpolate the displacement (sol) in each gauss point
-    end
+
+    Pn_gp = cell(ni,1); % for each face
+    Pt_gp = cell(ni,1); % for each face
+
 
     for i = 1:ni
 
@@ -49,10 +47,6 @@ function varargout = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu
         S_n = n'*cpt_normal(n);
         S_t1 = t1'*cpt_normal(n); %%%%%% TODO: check
         S_t2 = t2'*cpt_normal(n); %%%%%% TODO: check
-
-%     if (biased)
-%         D_bot = cpt_elas_mat(E(interfData(i).ebot), nu);
-%     end
 
         % Store stress at Gauss points (Bathe - FEProcedures, 4.3.6, p.254)
         stress_gp = zeros(ngauss^2, 6);
@@ -138,37 +132,9 @@ function varargout = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu
             end
         end
 
-        % TODO: use varargout, nargout to return stress in gauss points!
-        if nargout > 2
-            Pn_gp{i} = Pn;
-            Pt_gp{i} = Pt;
-        end
+        Pn_gp{i} = Pn;
+        Pt_gp{i} = Pt;
 
-        % Loop over the local nodes and add contribution to global nodes
-        for n = 1 : 4
-            nod = nod_top_face(n);
-            idx = find([nodePairsData.ntop] == nod, 1); 
-            % TODO: take only the closest gauss points (?)
-            eps(idx,:) = eps(idx,:) + mean(eps_gp,1);
-            stress(idx,:) = stress(idx,:) + mean(stress_gp,1);
-            node_count(idx) = node_count(idx) + 1;
-        end
     end
 
-    for n = 1:nni
-        if node_count(n) > 0
-            eps(n,:) = eps(n,:) / node_count(n);
-            stress(n, :) = stress(n, :) / node_count(n);
-        end
-    end
-
-
-    % Return the requested outputs
-    varargout{1} = stress;
-    varargout{2} = eps;
-    
-    if nargout > 2
-        varargout{3} = Pn_gp;
-        varargout{4} = Pt_gp;
-    end
 end

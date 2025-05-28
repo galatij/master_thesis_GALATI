@@ -1,43 +1,38 @@
-function masksP = set_masks(stress_n,stress_t, dsol, nodePairsData, gamma, phi, tol_P)
+function masksP = set_masks(Pn_gp, Pt_gp, ngauss, gamma, phi, tol_P)
 
-    nni = numel(nodePairsData);
+    ni = numel(Pn_gp);
+    ngp = ngauss*2;
     v3 = [1;2;3];
-    Pn = zeros(nni, 1);
-    Pt = zeros(nni,2);
+    
     % needed for the pseudo-Jacobian
-    masksP = struct("n0", false(nni,1),"npos", false(nni,1),"nneg", false(nni,1),...
-                   "t0", false(nni,1), "tstick", false(nni,1), "tslide", false(nni,1));
+    masksP = struct("n0", cell(ni,1),"npos", cell(ni,1),"nneg", cell(ni,1),...
+                   "t0", cell(ni,1), "tstick", cell(ni,1), "tslide", cell(ni,1));
 
-    for i = 1 : nni
-        % map node -> dofs
-        top_nod = nodePairsData(i).ntop;
-        bot_nod = nodePairsData(i).nbottom;
-        top_dof = 3*(top_nod-1)+v3;
-        bot_dof = 3*(bot_nod-1)+v3;
-        n = nodePairsData(i).normal;
-        t1 = nodePairsData(i).t1;
-        t2 = nodePairsData(i).t2;
-        top_nod_loc = find([nodePairsData.ntop] == top_nod,1);
-        Pn(i) = gamma*(dsol(top_dof) - dsol(bot_dof))'*n - stress_n(top_nod_loc);
-        Pt(i,1) = gamma*(dsol(top_dof) - dsol(bot_dof))'*t1 - stress_t(top_nod_loc,1);
-        Pt(i,2) = gamma*(dsol(top_dof) - dsol(bot_dof))'*t2 - stress_t(top_nod_loc,2);
-        normPt = vecnorm(Pt,2,2);
+    for i = 1 : ni
+        masksP.n0{i} = false(ngp, 1);
+        masksP.nneg{i} = false(ngp, 1);
+        masksP.npos{i} = false(ngp, 1);
+        masksP.t0{i} = false(ngp, 1);
+        masksP.tstick{i} = false(ngp, 1);
+        masksP.tslide{i} = false(ngp, 1);
 
-        if (abs(Pn(i)) < tol_P) % non-smooth case 1 ---> F(maskPn0) = 0, FRI(pn0,pn0) = ... 
-            masksP.n0(i) = true;
-        elseif (Pn(i) <= -tol_P) % open ---> F(maskPnneg) = 0
-            masksP.nneg(i) = true;
-        else % not open
-            masksP.npos(i) = true;
-            if (abs(normPt(i) - phi*Pn(i)) < tol_P) % non-smooth case 2 --> they're almost the same, so just take the easiest one (?) 
-                masksP.t0(i) = true;
-            elseif (normPt(i) - phi*Pn(i) <= -tol_P) % sticking ---> FRI(...) = sth (easy term)
-                masksP.tstick(i) = true;
-            else % sliding --> FRI() = sth (difficult term)
-                masksP.tslide(i) = true;
+        for gp = 1:ngp
+            normPt = ...;
+            if (abs(Pn_gp{i}(gp)) < tol_P) % non-smooth case 1 ---> F(maskPn0) = 0, FRI(pn0,pn0) = ... 
+                masksP.n0{i}(gp) = true;
+            elseif (Pn_gp{i}(gp) <= -tol_P) % open ---> F(maskPnneg) = 0
+                masksP.nneg{i}(gp) = true;
+            else % not open
+                masksP.npos{i}(gp) = true;
+                if (abs(normPt - phi*Pn_gp{i}(gp)) < tol_P) % non-smooth case 2 --> they're almost the same, so just take the easiest one (?) 
+                    masksP.t0{i}(gp) = true;
+                elseif (normPt - phi*Pn_gp{i}(gp) <= -tol_P) % sticking ---> FRI(...) = sth (easy term)
+                    masksP.tstick{i}(gp) = true;
+                else % sliding --> FRI() = sth (difficult term)
+                    masksP.tslide{i}(gp) = true;
+                end
             end
         end
-    end
 
 end
 
