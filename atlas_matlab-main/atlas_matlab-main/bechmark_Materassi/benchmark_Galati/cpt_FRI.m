@@ -8,11 +8,8 @@ function [F0, FRI] = cpt_FRI(ngauss,coord,topol,E, nu, ...
     %% Evaluate the positive part and the projection
     v3 = [1;2;3];
 
-    FRIstickList = zeros(ni*4*576, 3);
-    FRIslideList = zeros(ni*4*576, 3);
-
-    F0stick = zeros(3*nn, 1);
-    F0slide = zeros(3*nn, 1);
+    FRIlist = zeros(ni*4*576, 3);
+    F0 = zeros(3*nn, 1);
     
     k = 1;
     for i = 1 : ni 
@@ -20,11 +17,10 @@ function [F0, FRI] = cpt_FRI(ngauss,coord,topol,E, nu, ...
         k_base = (i-1)*4*576;
 
         % Compute contribution to the top face only (biased formulation)
-        [FRIstick11,FRIstick12,FRIstick21,FRIstick22, ...
-            FRIslide11,FRIslide12,FRIslide21,FRIslide22, ...
-            RESstick_top, RESstick_bot, RESslide_top, RESslide_bot] = ...
+        [FRI11,FRI12,FRI21,FRI22, ...
+            RES_top, RES_bot] = ...
                     cpt_FRIloc(ngauss, coord, topol, interfData, i, ...
-                        E, nu, gamma, alpha, phi, Pnu_gp{i}, Ptu_gp{i}, dsol);
+                        E, nu, gamma, alpha, phi, Pnu_gp{i}, Ptu_gp{i}, dsol, masksP);
         
         top_nod = topol(interfData(i).etop,:);
         bot_nod = topol(interfData(i).ebottom,:);
@@ -34,52 +30,29 @@ function [F0, FRI] = cpt_FRI(ngauss,coord,topol,E, nu, ...
         bot_dof = bot_dof(:);
 
         [II_top,JJ_top] = meshgrid(top_dof);
-        FRIstickList(k_base + (1:576), :) = [JJ_top(:), II_top(:), FRIstick11(:)];
+        FRIlist(k_base + (1:576), :) = [JJ_top(:), II_top(:), FRI11(:)];
 
 %         [II_bot,JJ_top] = meshgrid(bot_dof, top_dof);
         [II_bot,JJ_top] = meshgrid(top_dof, bot_dof);
-        FRIstickList(k_base + (1:576)+576, :) = [JJ_top(:), II_bot(:), FRIstick12(:)];
+        FRIlist(k_base + (1:576)+576, :) = [JJ_top(:), II_bot(:), FRI12(:)];
 
 %         [II_top,JJ_bot] = meshgrid(top_dof, bot_dof);
         [II_top,JJ_bot] = meshgrid(bot_dof, top_dof);
-        FRIstickList(k_base + (1:576)+2*576, :) = [JJ_bot(:), II_top(:), FRIstick21(:)];
+        FRIlist(k_base + (1:576)+2*576, :) = [JJ_bot(:), II_top(:), FRI21(:)];
 
         [II_bot,JJ_bot] = meshgrid(bot_dof);
-        FRIstickList(k_base + (1:576)+3*576, :) = [JJ_bot(:), II_bot(:), FRIstick22(:)];
+        FRIlist(k_base + (1:576)+3*576, :) = [JJ_bot(:), II_bot(:), FRI22(:)];
 
-
-        [II_top,JJ_top] = meshgrid(top_dof);
-        FRIslideList(k_base + (1:576), :) = [JJ_top(:), II_top(:), FRIslide11(:)];
-
-%         [II_bot,JJ_top] = meshgrid(bot_dof, top_dof);
-        [II_bot,JJ_top] = meshgrid(top_dof, bot_dof);
-        FRIslideList(k_base + (1:576)+576, :) = [JJ_top(:), II_bot(:), FRIslide12(:)];
-
-%         [II_top,JJ_bot] = meshgrid(top_dof, bot_dof);
-        [II_top,JJ_bot] = meshgrid(bot_dof, top_dof);
-        FRIslideList(k_base + (1:576)+2*576, :) = [JJ_bot(:), II_top(:), FRIslide21(:)];
-
-        [II_bot,JJ_bot] = meshgrid(bot_dof);
-        FRIslideList(k_base + (1:576)+3*576, :) = [JJ_bot(:), II_bot(:), FRIslide22(:)];
-        
         k = k + 576;
 
-        % Assemble residuals for sticking
-        F0stick(top_dof) = F0stick(top_dof) + RESstick_top;
-        F0stick(bot_dof) = F0stick(bot_dof) + RESstick_bot;
+        % Assemble residuals for
+        F0(top_dof) = F0(top_dof) + RES_top;
+        F0(bot_dof) = F0(bot_dof) + RES_bot;
         
-        % Assemble residuals for sliding
-        F0slide(top_dof) = F0slide(top_dof) + RESslide_top;
-        F0slide(bot_dof) = F0slide(bot_dof) + RESslide_bot;
-
-                
     end
 
-    FRIstick = sparse(FRIstickList(:,2), FRIstickList(:,1), FRIstickList(:,3), 3*nn, 3*nn);   
-    FRIslide = sparse(FRIslideList(:,2), FRIslideList(:,1), FRIslideList(:,3), 3*nn, 3*nn);
-
-    [F0, FRI] = setContactMode(FRIstick, FRIslide, F0stick, F0slide, masksP, nodePairsData);
-
+    FRI = sparse(FRIlist(:,2), FRIlist(:,1), FRIlist(:,3), 3*nn, 3*nn);   
+   
 %     fprintf("||F0|| = %f\n", norm(F0));
 %     fprintf("||FRI|| = %f\n", norm(FRI, 'fro'));
 
