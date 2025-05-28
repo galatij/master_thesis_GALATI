@@ -1,5 +1,4 @@
-function [KKT11,KKT12,KKT21,KKT22] = cpt_KKTloc(ngauss, coord, topol, interfData, i,...
-    E, nu, gamma, alpha, masksP)
+function [KKT11,KKT12,KKT21,KKT22] = cpt_KKTloc(ngauss, coord, topol, interfData, i, E, nu, gamma, alpha)
     
     TEST = false;
     % Extract the normal to face i
@@ -60,62 +59,52 @@ function [KKT11,KKT12,KKT21,KKT22] = cpt_KKTloc(ngauss, coord, topol, interfData
     tmp_bot = zeros(3,1);
     tmp_top(xi_id_top) = xi_val_top;
     tmp_bot(xi_id_bot) = xi_val_bot;
-    gp = 1;
     for i1 = 1 : ngauss
         csi = nodes(i1);
         tmp_top(ID_top==1) = csi;
         tmp_bot(ID_bot==1) = csi;
         for i2 = 1 : ngauss
-            if (masksP.nneg(i,gp) ~= true)
-                eta = nodes(i2);
-                tmp_top(ID_top==2) = eta;
-                tmp_bot(ID_bot==2) = eta;
-                [Bloc_top,detJ] = cpt_shape(loc_coo_top,tmp_top(1),tmp_top(2),tmp_top(3),xi_id_top); % shape derivatives 6x24
-                [Nloc_top] = cpt_shape_2D(loc_coo_top,tmp_top(1),tmp_top(2),tmp_top(3)); % shape functions 1x8
-                [Nloc_bot] = cpt_shape_2D(loc_coo_bot,tmp_bot(1),tmp_bot(2),tmp_bot(3)); % shape functions 1x8
-                Nloc_top = repelem(Nloc_top,1,3); % shape functions 1x24
-                Nloc_bot = repelem(Nloc_bot,1,3);
-                if (TEST)
-    %                 disp('Shape functions (top face):');
-    %                 disp(Nloc_top);
-    %                 disp('Shape functions (bottom face):');
-    %                 disp(Nloc_bot);
-                end
-                
-                P = gamma*Nloc_top.*nN - (S_n*D_top*Bloc_top);                 % P 1x24
-                Palpha = gamma*Nloc_top.*nN - alpha*(S_n*D_top*Bloc_top);
-                if (TEST)
-                    sol_test = loc_coo_top';
-                    sol_test = sol_test(:) + 1;
-    %                 disp(gamma*Nloc_top.*nN*sol_test);
-    %                 disp(P*sol_test);      % works correctly
-                    sigma = D_top*Bloc_top;
-                    sigma_n = S_n*D_top*Bloc_top;
-                    disp(sigma*sol_test)
-                end
-                
-    
-                % top-top (test/trial)
-                KKT11 = KKT11 + 1/gamma*Palpha'*P*weights(i1)*weights(i2)*detJ;
-                
-                % CHECK: maybe i need to reorder the bottom dofs!!!
-    
-                % top-bottom
-                KKT12 = KKT12 + 1/gamma*Palpha'*(-gamma*Nloc_bot.*nN)*weights(i1)*weights(i2)*detJ;
-    
-                % bottom-top
-                KKT21 = KKT21 + 1/gamma*(-gamma*Nloc_bot.*nN)'*P*weights(i1)*weights(i2)*detJ;
-    
-                % bottom-bottom
-                KKT22 = KKT22 + 1/gamma*(-gamma*Nloc_bot.*nN)'*(-gamma*Nloc_bot.*nN)*weights(i1)*weights(i2)*detJ;
+            eta = nodes(i2);
+            tmp_top(ID_top==2) = eta;
+            tmp_bot(ID_bot==2) = eta;
+            [Bloc_top,detJ] = cpt_shape(loc_coo_top,tmp_top(1),tmp_top(2),tmp_top(3),xi_id_top); % shape derivatives 6x24
+            [Nloc_top] = cpt_shape_2D(loc_coo_top,tmp_top(1),tmp_top(2),tmp_top(3)); % shape functions 1x8
+            [Nloc_bot] = cpt_shape_2D(loc_coo_bot,tmp_bot(1),tmp_bot(2),tmp_bot(3)); % shape functions 1x8
+            Nloc_top = repelem(Nloc_top,1,3); % shape functions 1x24
+            Nloc_bot = repelem(Nloc_bot,1,3);
+            if (TEST)
+%                 disp('Shape functions (top face):');
+%                 disp(Nloc_top);
+%                 disp('Shape functions (bottom face):');
+%                 disp(Nloc_bot);
             end
-            if (masksP.n0(i,gp) == true)
-                KKT11 = 0.5 * KKT11;
-                KKT12 = 0.5 * KKT12;
-                KKT21 = 0.5 * KKT21;
-                KKT22 = 0.5 * KKT22;
+            
+            P = gamma*Nloc_top.*nN - (S_n*D_top*Bloc_top);                 % P 1x24
+            Palpha = gamma*Nloc_top.*nN - alpha*(S_n*D_top*Bloc_top);
+            if (TEST)
+                sol_test = loc_coo_top';
+                sol_test = sol_test(:) + 1;
+%                 disp(gamma*Nloc_top.*nN*sol_test);
+%                 disp(P*sol_test);      % works correctly
+                sigma = D_top*Bloc_top;
+                sigma_n = S_n*D_top*Bloc_top;
+                disp(sigma*sol_test)
             end
-            gp =  gp + 1;
+
+            % top-top (test/trial)
+            KKT11 = KKT11 + 1/gamma*Palpha'*P*weights(i1)*weights(i2)*detJ;
+            
+            % CHECK: maybe i need to reorder the bottom dofs!!!
+
+            % top-bottom
+            KKT12 = KKT12 + 1/gamma*Palpha'*(-gamma*Nloc_bot.*nN)*weights(i1)*weights(i2)*detJ;
+
+            % CHECK: do I need to account for the following too?
+            % bottom-top
+            KKT21 = KKT21 + 1/gamma*(-gamma*Nloc_bot.*nN)'*P*weights(i1)*weights(i2)*detJ;
+
+            % bottom-bottom
+            KKT22 = KKT22 + 1/gamma*(-gamma*Nloc_bot.*nN)'*(-gamma*Nloc_bot.*nN)*weights(i1)*weights(i2)*detJ;
 
         end
     end
