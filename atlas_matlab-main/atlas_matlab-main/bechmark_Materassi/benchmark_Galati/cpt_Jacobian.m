@@ -6,7 +6,7 @@ function [res,J] = cpt_Jacobian(ngauss,coord,topol,E, nu,...
     % Evaluate quantities at previous k
     dsol0 = sol - state0;
     [stress,~, Pn_gp, Pt_gp] = cpt_stress(ngauss,coord,topol,interfData,nodePairsData,E,nu,gamma,dsol0);          % nn*6
-    [stress_n, stress_t] = cpt_stress_interf(stress, nodePairsData);
+%     [stress_n, stress_t] = cpt_stress_interf(stress, nodePairsData);
     masksP = set_masks(stress_n,stress_t, dsol0, nodePairsData, gamma, phi, tol_P);
 
     % compute the residual at iteration k
