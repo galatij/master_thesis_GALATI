@@ -7,12 +7,8 @@ function [Pn_gp, Pt_gp] = cpt_gp(ngauss,coord,topol,interfData,nodePairsData,E,n
 
     TEST = false;
 
-%     biased = false;
-
     ni = numel(interfData); % number of interface faces
     nni = numel(nodePairsData); % number of nodes at the interface
-    node_count = zeros(nni,1); % counter for averaging
-
     v3 = [1;2;3];
 
     Pn_gp = cell(ni,1); % for each face
@@ -50,7 +46,6 @@ function [Pn_gp, Pt_gp] = cpt_gp(ngauss,coord,topol,interfData,nodePairsData,E,n
 
         % Store stress at Gauss points (Bathe - FEProcedures, 4.3.6, p.254)
         stress_gp = zeros(ngauss^2, 6);
-        eps_gp = zeros(ngauss^2,6);
 
         Pn = zeros(ngauss^2,1);
         Pt = zeros(ngauss^2,2);
@@ -109,8 +104,6 @@ function [Pn_gp, Pt_gp] = cpt_gp(ngauss,coord,topol,interfData,nodePairsData,E,n
                 loc_eps = Bloc_top * sol_top;
 
                 stress_gp(gp_idx,:) = (D_top*loc_eps)'; % 6x1 (or 6x3)
-
-                eps_gp(gp_idx,:) = loc_eps';
 
                 u_gp_top = Nloc_top*sol_top_mat; % 1x8 * 8x3 --> 1x3
 
