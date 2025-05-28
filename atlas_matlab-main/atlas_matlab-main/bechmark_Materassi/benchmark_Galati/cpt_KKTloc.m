@@ -61,6 +61,7 @@ function [KKT11,KKT12,KKT21,KKT22] = cpt_KKTloc(ngauss, coord, topol, interfData
     tmp_top(xi_id_top) = xi_val_top;
     tmp_bot(xi_id_bot) = xi_val_bot;
     gp = 1;
+    
     for i1 = 1 : ngauss
         csi = nodes(i1);
         tmp_top(ID_top==1) = csi;
@@ -93,28 +94,29 @@ function [KKT11,KKT12,KKT21,KKT22] = cpt_KKTloc(ngauss, coord, topol, interfData
                     sigma_n = S_n*D_top*Bloc_top;
                     disp(sigma*sol_test)
                 end
-                
+
+                % If Pn(gp) is positive, add the full contribution,
+                % otherwise (Pn(gp) == 0) add half the contribution
+                mode = 1;
+                if (masksP.n0(i,gp) == true)
+                    mode = 0.5;
+                end
     
                 % top-top (test/trial)
-                KKT11 = KKT11 + 1/gamma*Palpha'*P*weights(i1)*weights(i2)*detJ;
+                KKT11 = KKT11 + mode*1/gamma*Palpha'*P*weights(i1)*weights(i2)*detJ;
                 
                 % CHECK: maybe i need to reorder the bottom dofs!!!
     
                 % top-bottom
-                KKT12 = KKT12 + 1/gamma*Palpha'*(-gamma*Nloc_bot.*nN)*weights(i1)*weights(i2)*detJ;
+                KKT12 = KKT12 + mode*1/gamma*Palpha'*(-gamma*Nloc_bot.*nN)*weights(i1)*weights(i2)*detJ;
     
                 % bottom-top
-                KKT21 = KKT21 + 1/gamma*(-gamma*Nloc_bot.*nN)'*P*weights(i1)*weights(i2)*detJ;
+                KKT21 = KKT21 + mode*1/gamma*(-gamma*Nloc_bot.*nN)'*P*weights(i1)*weights(i2)*detJ;
     
                 % bottom-bottom
-                KKT22 = KKT22 + 1/gamma*(-gamma*Nloc_bot.*nN)'*(-gamma*Nloc_bot.*nN)*weights(i1)*weights(i2)*detJ;
+                KKT22 = KKT22 + mode*1/gamma*(-gamma*Nloc_bot.*nN)'*(-gamma*Nloc_bot.*nN)*weights(i1)*weights(i2)*detJ;
             end
-            if (masksP.n0(i,gp) == true)
-                KKT11 = 0.5 * KKT11;
-                KKT12 = 0.5 * KKT12;
-                KKT21 = 0.5 * KKT21;
-                KKT22 = 0.5 * KKT22;
-            end
+
             gp =  gp + 1;
 
         end

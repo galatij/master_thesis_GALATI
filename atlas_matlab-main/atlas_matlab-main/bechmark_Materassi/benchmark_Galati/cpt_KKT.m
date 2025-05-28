@@ -54,6 +54,7 @@ function [C_k, KKT] = cpt_KKT(ngauss,coord,topol,E, nu, ...
         + sparse(KKTlist22(:,2),KKTlist22(:,1),KKTlist22(:,3),3*nn,3*nn,size(KKTlist22,1));
 
     C_k = KKT * dsol;
+
     
 
 end
