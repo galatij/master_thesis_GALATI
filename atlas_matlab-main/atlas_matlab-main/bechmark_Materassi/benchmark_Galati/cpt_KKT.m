@@ -57,33 +57,22 @@ function [C_k, KKT] = cpt_KKT(ngauss,coord,topol,E, nu, ...
     % Take the positive part
     % map nni -> global dofs
     all_ntop = [nodePairsData.ntop];
-    nodes0neg = all_ntop(~masksP.npos);
-    dof0neg = 3*(nodes0neg-1)+v3;
-    dof0neg = dof0neg(:);
-    ddof0neg = expand_dofs(dof0neg);
-
-    nodes_neg = all_ntop(masksP.nneg);
-    dof_neg = 3*(nodes_neg-1)+v3;
-    dof_neg = dof_neg(:);
-    ddof_neg = expand_dofs(dof_neg);
-
-    nodes0 = all_ntop(masksP.n0);
-    dof0 = 3*(nodes0-1)+v3;
-    dof0 = dof0(:);
-    ddof0 = expand_dofs(dof0);
+    dof0neg = expand_dofs(all_ntop(~masksP.npos));
+    dof_neg = expand_dofs(all_ntop(masksP.nneg));
+    dof0 = expand_dofs(all_ntop(masksP.n0));
     
-    C_k(ddof0neg) = 0;
+    C_k(dof0neg) = 0;
 %     KKT(dof_neg, :) = 0;
 %     KKT(:, dof_neg) = 0;
-    KKT(ddof_neg, ddof_neg) = 0;
+    KKT(dof_neg, dof_neg) = 0;
 
 
     % Semi-smooth Newton where Pgamma_u = 0
     %%% e.g. take any value in the convex hull of the subdifferential, e.g.
     %%% 0.5 of the computed value
-%     KKT(:, ddof0) = 0.5*KKT(:, ddof0);
-%     KKT(ddof0, :) = 0.5*KKT(ddof0, :);
-    KKT(ddof0, ddof0) = 0.5*KKT(ddof0, ddof0);
+%     KKT(:, dof0) = 0.5*KKT(:, dof0);
+%     KKT(dof0, :) = 0.5*KKT(dof0, :);
+    KKT(dof0, dof0) = 0.5*KKT(dof0, dof0);
 
 
 end

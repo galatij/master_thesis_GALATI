@@ -99,7 +99,6 @@ function [KKT11,KKT12,KKT21,KKT22] = cpt_KKTloc(ngauss, coord, topol, interfData
             % top-bottom
             KKT12 = KKT12 + 1/gamma*Palpha'*(-gamma*Nloc_bot.*nN)*weights(i1)*weights(i2)*detJ;
 
-            % CHECK: do I need to account for the following too?
             % bottom-top
             KKT21 = KKT21 + 1/gamma*(-gamma*Nloc_bot.*nN)'*P*weights(i1)*weights(i2)*detJ;
 

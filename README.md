@@ -11,7 +11,7 @@ Master thesis on Coulomb friction at the interface of faults.
 - cpt_stress.m: given the solution u at iteration k, compute the stress at the interface nodes (top only, biased formulation) and optionally evaluate the "modified stress" Pn, Pt at the gauss points, needed for the computation of the Jacobian. Notice that i am averaging the stress on the gauss points of the faces sharing the node, as suggested by Bathe - Finite Elements Procedures (2006).
 - cpt_stress_interf.m: to take the normal traction and the tangential tractions at the interface.
 - cpt_stress_tot.m: compute the stress in each element. Used only for post-processing. A refactoring may be useful since it shares mosto of the code with cpt_stress.m.
-- expand_dofs.m: used in setContactMode.m. The masks for the mode (slip, stick, non-smooth case etc.) are given in each interface node. Each node is related to 3 DOFs in the matrix, but actually also other dofs contribute to the Jacobian. Hence it maps the dofs of the node to the dofs engaged in the Jacobian computation.
+- expand_dofs.m: used in setContactMode.m. The masks for the mode (slip, stick, non-smooth case etc.) are given in each interface node. Each node is related to 3 DOFs in the matrix, but actually also other dofs contribute to the Jacobian. Hence it maps nodes to the dofs engaged in the Jacobian computation.
 - setContactMode.m: after the computation of the different contributions to the Jacobian, it selects the right one (stick, slip, 0 or non-smooth case) depending on the masks computed with the previous solution. It implements the semi-smooth part of Newton.
 
 ### DONE:

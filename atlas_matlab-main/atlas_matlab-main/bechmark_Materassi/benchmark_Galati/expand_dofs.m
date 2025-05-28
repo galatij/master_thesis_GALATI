@@ -1,5 +1,11 @@
-function [out] = expand_dofs(v)
+function [v] = expand_dofs(nodes)
 
+    v3 = [1;2;3];
+
+    v = 3*(nodes-1)+v3;
+    v = v(:);
+    
+    return
     v_reshaped = reshape(v, 3, []).';
 
     % Initialize expanded result
