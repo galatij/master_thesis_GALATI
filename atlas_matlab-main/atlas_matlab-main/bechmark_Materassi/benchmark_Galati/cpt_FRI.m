@@ -32,12 +32,12 @@ function [F0, FRI] = cpt_FRI(ngauss,coord,topol,E, nu, ...
         [II_top,JJ_top] = meshgrid(top_dof);
         FRIlist(k_base + (1:576), :) = [JJ_top(:), II_top(:), FRI11(:)];
 
-%         [II_bot,JJ_top] = meshgrid(bot_dof, top_dof);
-        [II_bot,JJ_top] = meshgrid(top_dof, bot_dof);
+        [II_bot,JJ_top] = meshgrid(bot_dof, top_dof);
+%         [II_bot,JJ_top] = meshgrid(top_dof, bot_dof);
         FRIlist(k_base + (1:576)+576, :) = [JJ_top(:), II_bot(:), FRI12(:)];
 
-%         [II_top,JJ_bot] = meshgrid(top_dof, bot_dof);
-        [II_top,JJ_bot] = meshgrid(bot_dof, top_dof);
+        [II_top,JJ_bot] = meshgrid(top_dof, bot_dof);
+%         [II_top,JJ_bot] = meshgrid(bot_dof, top_dof);
         FRIlist(k_base + (1:576)+2*576, :) = [JJ_bot(:), II_top(:), FRI21(:)];
 
         [II_bot,JJ_bot] = meshgrid(bot_dof);

@@ -16,19 +16,22 @@ ngauss = 2;
 E0 = 25000; % MPa
 % E = zeros(ne,1) + E0;
 nu = 0.3;
+cohes = 0.0;
+phi = 0.2;
+tx = 2;
+tz = 4;
+alpha = 1;  % 0 1 -1
+gamma = 10*E0;  % TODO: modify gamma_h
 
 lambda = E0*nu/((1+nu)*(1-2*nu));
 % mu = E0/2/(1+nu)
-
-alpha = -1;  % 0 1 -1
-gamma = 10*E0;  % TODO: modify gamma_h
 
 % Newton-Raphson parameters
 itmax_NR = 20 * 100;
 tol_NR = [1.e-2,1.e-3];
 % tol_NR = [1.e-7,1.e-11];
 noConvItMax = 4;
-maxBackStep = 4;
+maxBackStep = 5;
 
 % Nitsche's parameters
 SAVEVTK = true;
@@ -36,8 +39,6 @@ tol_sig = 1.e-2 * 1e-2;
 tol_duNc = 1.e-5 * 1e-2;
 tol_duT = 1.e-5 * 1e-2;
 tol_P = 1.e-6;
-cohes = 0.0;
-phi = 30.0/180.0*pi;
 
 %% Create the mesh
 nx = 16;
@@ -56,7 +57,7 @@ if (TEST)
     Lz = 4;
 end
 if (TEST1)
-    nx = 2;
+    nx = 4;
     ny = 4;
     nz = 4;
     Lx = 1;
@@ -169,11 +170,11 @@ bound = repmat(struct('nf', 1, 'isbound', 1, 'ID', 1, 'values', 1), 2, 1);
 bound(1).isbound = (bar_fac(:,3) == zmax & bar_fac(:,1) > 0.0); % top face, positive x
 bound(1).ID = ID(bound(1).isbound);                             % IDs of faces to impose stress bc
 bound(1).nf = length(bound(1).ID);
-bound(1).values = zeros(bound(1).nf,3) + [0,0,-3];              % imposition of stress along z
+bound(1).values = zeros(bound(1).nf,3) + [0,0,-tz];              % imposition of stress along z
 bound(2).isbound = (bar_fac(:,1) == xmax);                      % right face
 bound(2).ID = ID(bound(2).isbound);
 bound(2).nf = length(bound(2).ID);
-bound(2).values = zeros(bound(2).nf,3) + [-2,0,0];              % imposition of stress along x (compressive)
+bound(2).values = zeros(bound(2).nf,3) + [-tx,0,0];              % imposition of stress along x (compressive)
 
 %% Assemble the system
 % TODO: multply by rotation matrix ???
