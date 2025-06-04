@@ -11,6 +11,10 @@ ngauss = 2;
 % Elastic parameters
 E0 = 25000.e0; % MPa
 nu = 0.25;
+cohes = 0.0;
+phi = 0.08;%30.0/180.0*pi;
+tx = -10;
+tz = -3;
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Newton-Raphson parameters
 % ITMAX
@@ -31,9 +35,9 @@ SAVEVTK = true;
 %[nn,coord,coordOrig,ne,topol,ni,interf,interf2e,ndir,dir,dirval,dx,dy,dz,matID] = ...
 %   read_mesh(fileName);
 
-nx = 8;
-ny = 16;
-nz = 16;
+nx = 4;
+ny = 8;
+nz = 8;
 Lx = 1;
 Ly = 8;
 Lz = 8;
@@ -80,11 +84,11 @@ bound = repmat(struct('nf', 1, 'isbound', 1, 'ID', 1, 'values', 1), 2, 1);
 bound(1).isbound = (bar_fac(:,3) == zmax & bar_fac(:,1) > 0.0); % top face, positive x
 bound(1).ID = ID(bound(1).isbound);                             % IDs of faces to impose stress bc
 bound(1).nf = length(bound(1).ID);
-bound(1).values = zeros(bound(1).nf,3) + [0,0,-3];              % impossition of stress along z
+bound(1).values = zeros(bound(1).nf,3) + [0,0,tz];              % impossition of stress along z
 bound(2).isbound = (bar_fac(:,1) == xmax);                      % right face
 bound(2).ID = ID(bound(2).isbound);
 bound(2).nf = length(bound(2).ID);
-bound(2).values = zeros(bound(2).nf,3) + [-2,0,0];              % imposition of stress along x (compressive)
+bound(2).values = zeros(bound(2).nf,3) + [tx,0,0];              % imposition of stress along x (compressive)
 
 E = zeros(ne,1) + E0;
 
@@ -103,8 +107,6 @@ nrm_fault = [1;0;0];
 tol_sig = 1.e-2 * 1e-2;
 tol_duNc = 1.e-5 * 1e-2;
 tol_duT = 1.e-5 * 1e-2;
-cohes = 0.0;
-phi = 30.0/180.0*pi;
 
 sol_u = zeros(3*nn,1);
 sol_l = lam_ini;

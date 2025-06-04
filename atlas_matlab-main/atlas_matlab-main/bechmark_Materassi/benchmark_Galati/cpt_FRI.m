@@ -52,7 +52,6 @@ function [F0, FRI] = cpt_FRI(ngauss,coord,topol,E, nu, ...
     end
 
     FRI = sparse(FRIlist(:,2), FRIlist(:,1), FRIlist(:,3), 3*nn, 3*nn);   
-   
 %     fprintf("||F0|| = %f\n", norm(F0));
 %     fprintf("||FRI|| = %f\n", norm(FRI, 'fro'));
 

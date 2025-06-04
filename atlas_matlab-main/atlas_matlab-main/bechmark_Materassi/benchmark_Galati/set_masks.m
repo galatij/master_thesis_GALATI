@@ -16,7 +16,7 @@ function masksP = set_masks(Pn_gp, Pt_gp, ngauss, phi, tol_P)
 
     % needed for the pseudo-Jacobian
     ni = numel(Pn_gp);
-    ngp = ngauss * 2;
+    ngp = ngauss * ngauss;
 
     % Preallocate masks as logical matrices of size [ni x ngp]
     masksP.n0 = false(ni, ngp);

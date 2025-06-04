@@ -45,15 +45,15 @@ function [FRI11,FRI12,FRI21,FRI22, ...
     X_top = ismember(Nloc_top*loc_coo_top,coord(top_nod,:),'row');
     X_bot = ismember(Nloc_bot*loc_coo_bot,coord(bot_nod,:),'row');
 
-    for i = 1 : 3
-        if (std(xi(X_top,i)) == 0)
-            xi_id_top = i;
-            xi_val_top = mean(xi(X_top,i));
+    for ii = 1 : 3
+        if (std(xi(X_top,ii)) == 0)
+            xi_id_top = ii;
+            xi_val_top = mean(xi(X_top,ii));
         end
         % TODO: maybe the following is not necessary, check
-        if (std(xi(X_bot,i)) == 0)
-            xi_id_bot = i;
-            xi_val_bot = mean(xi(X_bot,i));
+        if (std(xi(X_bot,ii)) == 0)
+            xi_id_bot = ii;
+            xi_val_bot = mean(xi(X_bot,ii));
         end
     end
 
@@ -72,14 +72,6 @@ function [FRI11,FRI12,FRI21,FRI22, ...
     FRI12 = zeros(24,24);
     FRI21 = zeros(24,24);
     FRI22 = zeros(24,24);
-    FRI1_11 = zeros(24,24);
-    FRI1_12 = zeros(24,24);
-    FRI1_21 = zeros(24,24);
-    FRI1_22 = zeros(24,24);
-    FRI2_11 = zeros(24,24);
-    FRI2_12 = zeros(24,24);
-    FRI2_21 = zeros(24,24);
-    FRI2_22 = zeros(24,24);
     REStop = zeros(24,1);
     RESbot = zeros(24,1);
 
@@ -95,6 +87,7 @@ function [FRI11,FRI12,FRI21,FRI22, ...
         tmp_top(ID_top==1) = csi;
         tmp_bot(ID_bot==1) = csi;
         for i2 = 1 : ngauss
+%             fprintf("In FRIloc: i = %d, gp = %d\n", i, gp_idx);
             eta = nodes(i2);
             tmp_top(ID_top==2) = eta;
             tmp_bot(ID_bot==2) = eta;
@@ -120,11 +113,11 @@ function [FRI11,FRI12,FRI21,FRI22, ...
                 if (masksP.tstick(i,gp_idx) == true) % full contribution
                     mode = 1;
                 elseif (masksP.n0(i,gp_idx) == true) % handle the first non-smooth case
-                    mode = 1/3;
+                    mode = 1/3; % 1/3;
                 elseif (masksP.t0(i,gp_idx) == true) % handle the second non-smooth case
-                    mode = 1/2;
+                    mode = 0.5; % 1/2;
                 end
-                assert(mode ~= 0);
+%                 assert(mode ~= 0);
 
                 FRI11 = FRI11 + mode*1/gamma*Ptalpha'*Pt*wJ; % top-top (test/trial)
                 FRI12 = FRI12 + mode*1/gamma*Ptalpha'*(-gamma*Nloc_bot.*tT)*wJ; % top-bottom
@@ -151,9 +144,9 @@ function [FRI11,FRI12,FRI21,FRI22, ...
                 if (masksP.tslide(i,gp_idx) == true) % full contribution
                     mode = 1;
                 elseif (masksP.n0(i,gp_idx) == true) % handle the first non-smooth case
-                    mode = 1/3;
+                    mode = 0; % 1/3
                 elseif (masksP.t0(i,gp_idx) == true) % handle the second non-smooth case
-                    mode = 1/2;
+                    mode = 0.5; %1/2;
                 end
                 
                 % Prevent division by 0
@@ -178,11 +171,11 @@ function [FRI11,FRI12,FRI21,FRI22, ...
                 test_bot = (-gamma*Nloc_bot.*tT);
     
                 % first part of the Jacobian
-                FRI1_11 = FRI1_11 + mode*phi/gamma * test_top' * trial_top1 * wJ; % top-top (test/trial)
-                FRI1_12 = FRI1_12 + mode*phi/gamma * test_top' * trial_top1 * wJ; % top-bottom
-                FRI1_21 = FRI1_21 + mode*phi/gamma * test_bot' * trial_top1 * wJ; % bottom-top
-                FRI1_22 = FRI1_22 + mode*phi/gamma * test_bot' * trial_bot1 * wJ; % bottom-bottom
-    
+                FRI11 = FRI11 + mode*phi/gamma * test_top' * trial_top1 * wJ; % top-top (test/trial)
+                FRI12 = FRI12 + mode*phi/gamma * test_top' * trial_top1 * wJ; % top-bottom
+                FRI21 = FRI21 + mode*phi/gamma * test_bot' * trial_top1 * wJ; % bottom-top
+                FRI22 = FRI22 + mode*phi/gamma * test_bot' * trial_bot1 * wJ; % bottom-bottom
+                
                 % residual
                 if (masksP.tslide(i,gp_idx) == true || masksP.t0(i,gp_idx) == true)
                     REStop = REStop + mode*phi/gamma * test_top' * trial_top1 * wJ*dsol(top_dof) ...
@@ -192,18 +185,14 @@ function [FRI11,FRI12,FRI21,FRI22, ...
 
                 end
                 % second part of the jacobian (accounting for dtdu)
-                FRI2_11 = FRI2_11 + mode*phi/gamma*test_top'*trial_top2*wJ; % top-top (test/trial)
-                FRI2_12 = FRI2_12 + mode*phi/gamma*test_top'*trial_bot2*wJ; % top-bottom
-                FRI2_21 = FRI2_21 + mode*phi/gamma*test_bot'*trial_top2*wJ; % bottom-top
-                FRI2_22 = FRI2_22 + mode*phi/gamma*test_bot'*trial_bot2*wJ; % bottom-bottom
+                FRI11 = FRI11 + mode*phi/gamma*test_top'*trial_top2*wJ; % top-top (test/trial)
+                FRI12 = FRI12 + mode*phi/gamma*test_top'*trial_bot2*wJ; % top-bottom
+                FRI21 = FRI21 + mode*phi/gamma*test_bot'*trial_top2*wJ; % bottom-top
+                FRI22 = FRI22 + mode*phi/gamma*test_bot'*trial_bot2*wJ; % bottom-bottom
             end
             % increment the counter
             gp_idx = gp_idx + 1;
 
         end
     end
-    FRI11 = FRI11 + FRI1_11 + FRI2_11;
-    FRI12 = FRI12 + FRI1_12 + FRI2_12;
-    FRI21 = FRI21 + FRI1_21 + FRI2_21;
-    FRI22 = FRI22 + FRI1_22 + FRI2_22;
 end
