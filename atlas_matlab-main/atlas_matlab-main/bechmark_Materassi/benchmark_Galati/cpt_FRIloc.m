@@ -3,6 +3,7 @@ function [FRI11,FRI12,FRI21,FRI22, ...
                     cpt_FRIloc(ngauss, coord, topol, interfData, i, ...
                         E, nu, gamma, alpha, phi, Pnu, Ptu, dsol, masksP)
     
+%     fprintf("Sliding GPs in face %d: %d\n", i, sum(masksP.tslide(i,:)));
     v3 = [1;2;3];
 
     %% Extract data for face i
@@ -126,16 +127,12 @@ function [FRI11,FRI12,FRI21,FRI22, ...
                 
                 % TODO: maybe I should compute the residual at the end
                 if (masksP.tstick(i,gp_idx) == true || masksP.t0(i,gp_idx) == true)
-%                     REStop = REStop + mode*1/gamma*Ptalpha'*Pt*wJ*dsol(top_dof) ...
-%                         + mode*1/gamma*(-gamma*Nloc_bot.*tT)'*Pt*wJ*dsol(bot_dof); % top
-%                     RESbot = RESbot + mode*1/gamma*Ptalpha'*(-gamma*Nloc_bot.*tT)*wJ*dsol(top_dof) ...
-%                         + mode*1/gamma*(-gamma*Nloc_bot.*tT)'*(-gamma*Nloc_bot.*tT)*wJ*dsol(bot_dof); % bottom
-
                     REStop = REStop + mode*1/gamma*Ptalpha'*Pt*wJ*dsol(top_dof) ...
                                     + mode*1/gamma*Ptalpha'*(-gamma*Nloc_bot.*tT)*wJ*dsol(bot_dof);
                     RESbot = RESbot + mode*1/gamma*(-gamma*Nloc_bot.*tT)'*Pt*wJ*dsol(top_dof) ...
                                     + mode*1/gamma*(-gamma*Nloc_bot.*tT)'*(-gamma*Nloc_bot.*tT)*wJ*dsol(bot_dof); % bottom
                 end
+
             end
             if (masksP.tslide(i,gp_idx) == true ...
                     || masksP.n0(i,gp_idx) == true ...
@@ -182,8 +179,29 @@ function [FRI11,FRI12,FRI21,FRI22, ...
                                     + mode*phi/gamma * test_top' * trial_bot1 * wJ*dsol(bot_dof); % top
                     RESbot = RESbot + mode*phi/gamma * test_bot' * trial_top1 * wJ*dsol(top_dof) ...
                                     + mode*phi/gamma * test_bot' * trial_bot1 * wJ*dsol(bot_dof); % bottom
-
                 end
+
+%                 % Alternative computation of the residual (without using
+%                 % precomputed gp quantities, cfr cpt_gp.m
+%                 % RMK: you should comment both the previous contributions
+%                 % to the residual. Here i am not using the masks. This
+%                 % way the residual is inconsistent with the computation of
+%                 % the Jacobian
+%                 Shu = phi * max(Pnu_loc, 0);
+%                 
+%                 normPtu = norm(Ptu_loc) + eps;
+%                 
+%                 % Project Ptu_loc onto ball of radius Shu
+%                 if normPtu <= Shu
+%                     Pt_proj = Ptu_loc;
+%                 else
+%                     Pt_proj = Shu * (Ptu_loc / normPtu);
+%                 end
+%                 
+%                 % Residual contributions
+%                 REStop = REStop + mode/gamma * test_top' * Pt_proj * wJ;
+%                 RESbot = RESbot + mode/gamma * test_bot' * Pt_proj * wJ;
+
                 % second part of the jacobian (accounting for dtdu)
                 FRI11 = FRI11 + mode*phi/gamma*test_top'*trial_top2*wJ; % top-top (test/trial)
                 FRI12 = FRI12 + mode*phi/gamma*test_top'*trial_bot2*wJ; % top-bottom
