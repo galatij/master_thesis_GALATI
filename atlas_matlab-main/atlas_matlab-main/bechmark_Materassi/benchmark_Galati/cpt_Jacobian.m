@@ -18,9 +18,9 @@ function [res,J] = cpt_Jacobian(ngauss,coord,topol,E, nu,...
                          interfData, nodePairsData, gamma, alpha, phi, ...
                          dsol0, masksP, Pn_gp, Pt_gp);
 
-    res = (K - alpha*B) * dsol0 + K0 - rhs;% + F0; % + F0;
+    res = (K - alpha*B) * dsol0 + K0 - rhs + F0; % + F0;
 
-    J = K - alpha*B + KKT;% + FRI; % + FRI;
+    J = K - alpha*B + KKT + FRI; % + FRI;
 
     [J,res] = DirBC(ndir,dir,zeros(ndir,1),J,res);
 

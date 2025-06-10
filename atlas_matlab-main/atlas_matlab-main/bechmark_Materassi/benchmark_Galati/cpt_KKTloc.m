@@ -117,10 +117,7 @@ function [KKT11,KKT12,KKT21,KKT22] = cpt_KKTloc(ngauss, coord, topol, interfData
                 KKT22 = KKT22 + mode*1/gamma*(-gamma*Nloc_bot.*nN)'*(-gamma*Nloc_bot.*nN)*weights(i1)*weights(i2)*detJ;
             end
 
-<<<<<<< HEAD
-=======
             gp =  gp + 1;
->>>>>>> gp
 
         end
     end
