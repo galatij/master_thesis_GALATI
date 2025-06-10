@@ -1,7 +1,7 @@
 clc;
 close all;
 clear;
-
+delete('result_nitsche_*.vtk');
 TEST = false;
 TEST1 = true;
 % NOTE
@@ -13,22 +13,25 @@ TEST1 = true;
 ngauss = 2;
 
 % Elastic parameters
-E0 = 25000; % MPa
+E0 = 25000.e0; % MPa
 % E = zeros(ne,1) + E0;
-nu = 0.3;
+nu = 0.25;
+cohes = 0.0;
+phi = 0.1; %30.0/180.0*pi;
+tx = -10;
+tz = -3;
+alpha = -1;  % 0 1 -1
+gamma = 10*E0;
 
 lambda = E0*nu/((1+nu)*(1-2*nu));
 % mu = E0/2/(1+nu)
-
-alpha = -1;  % 0 1 -1
-gamma = 10*E0;  % TODO: modify gamma_h
 
 % Newton-Raphson parameters
 itmax_NR = 20 * 100;
 tol_NR = [1.e-2,1.e-3];
 % tol_NR = [1.e-7,1.e-11];
 noConvItMax = 4;
-maxBackStep = 4;
+maxBackStep = 8;
 
 % Nitsche's parameters
 SAVEVTK = true;
@@ -36,29 +39,19 @@ tol_sig = 1.e-2 * 1e-2;
 tol_duNc = 1.e-5 * 1e-2;
 tol_duT = 1.e-5 * 1e-2;
 tol_P = 1.e-6;
-cohes = 0.0;
-phi = 30.0/180.0*pi;
 
 %% Create the mesh
-nx = 16;
+nx = 8;
 ny = 16;
 nz = 16;
 Lx = 1;
 Ly = 8;
 Lz = 8;
 
-if (TEST)
-    nx = 1;
-    ny = 2;
-    nz = 2;
-    Lx = 1;
-    Ly = 4;
-    Lz = 4;
-end
 if (TEST1)
-    nx = 2;
-    ny = 4;
-    nz = 4;
+    nx = 4;
+    ny = 8;
+    nz = 8;
     Lx = 1;
     Ly = 8;
     Lz = 8;
@@ -169,11 +162,11 @@ bound = repmat(struct('nf', 1, 'isbound', 1, 'ID', 1, 'values', 1), 2, 1);
 bound(1).isbound = (bar_fac(:,3) == zmax & bar_fac(:,1) > 0.0); % top face, positive x
 bound(1).ID = ID(bound(1).isbound);                             % IDs of faces to impose stress bc
 bound(1).nf = length(bound(1).ID);
-bound(1).values = zeros(bound(1).nf,3) + [0,0,-3];              % imposition of stress along z
+bound(1).values = zeros(bound(1).nf,3) + [0,0,tz];              % imposition of stress along z
 bound(2).isbound = (bar_fac(:,1) == xmax);                      % right face
 bound(2).ID = ID(bound(2).isbound);
 bound(2).nf = length(bound(2).ID);
-bound(2).values = zeros(bound(2).nf,3) + [-2,0,0];              % imposition of stress along x (compressive)
+bound(2).values = zeros(bound(2).nf,3) + [tx,0,0];              % imposition of stress along x (compressive)
 
 %% Assemble the system
 % TODO: multply by rotation matrix ???
@@ -259,6 +252,7 @@ loadsScal = zeros(length(steps),1);
 loadsScal(:) = 1;
 loadsScalZ = zeros(length(steps),1);
 loadsScalZ(:) = [0,1,2,3,4,5,4,3,2,1];
+% loadsScalZ(:) = [0,1,2,3,4,4,3.5,3,2,1];
 
 loads = zeros(3*nn,length(steps));
 loads(1:3:3*nn,:) = repmat(loadsScal',nn,1);

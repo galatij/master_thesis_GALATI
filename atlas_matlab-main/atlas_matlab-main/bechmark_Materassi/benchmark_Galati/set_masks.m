@@ -1,46 +1,50 @@
-function masksP = set_masks(stress_n,stress_t, dsol, nodePairsData, gamma, phi, tol_P)
+function masksP = set_masks(Pn_gp, Pt_gp, ngauss, phi, tol_P)
+%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     Given the modified stress P evaluated at the gauss points, sets the 
+%     mode (stick, slide, 0, non-smooth cases) for each gauss points.
+%     The masks are used in the computation of the Jacobian and of the
+%     residual.
+%     masksP is a struct containing 6 entities:
+%         - n0: |Pn(u)| = 0 --> first non-smooth case (triple point)
+%         - nneg: Pn(u) < 0 --> [Pn(u)]_+ = 0 --> zeros Jacobian, zero residual
+%         - npos: Pn(u) > 0 --> [Pn(u)]_+ = Pn(u)
+%             In such a case, define Sh(u) = mu_friction*Pn(u)
+%             - tstick: ||Pt(u)|| < Sh(u) --> stick
+%             - t0: ||Pt(u)|| = Sh(u) --> second non-smooth case
+%             - tslide: ||Pt(u)|| > Sh(u) --> project on the ball of radius Sh(u)
+%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    nni = numel(nodePairsData);
-    v3 = [1;2;3];
-    Pn = zeros(nni, 1);
-    Pt = zeros(nni,2);
     % needed for the pseudo-Jacobian
-    masksP = struct("n0", false(nni,1),"npos", false(nni,1),"nneg", false(nni,1),...
-                   "t0", false(nni,1), "tstick", false(nni,1), "tslide", false(nni,1));
+    ni = numel(Pn_gp);
+    ngp = ngauss * ngauss;
 
-    for i = 1 : nni
-        % map node -> dofs
-        top_nod = nodePairsData(i).ntop;
-        bot_nod = nodePairsData(i).nbottom;
-        top_dof = 3*(top_nod-1)+v3;
-        bot_dof = 3*(bot_nod-1)+v3;
-        n = nodePairsData(i).normal;
-        t1 = nodePairsData(i).t1;
-        t2 = nodePairsData(i).t2;
-        top_nod_loc = find([nodePairsData.ntop] == top_nod,1);
-        Pn(i) = gamma*(dsol(top_dof) - dsol(bot_dof))'*n - stress_n(top_nod_loc);
-        Pt(i,1) = gamma*(dsol(top_dof) - dsol(bot_dof))'*t1 - stress_t(top_nod_loc,1);
-        Pt(i,2) = gamma*(dsol(top_dof) - dsol(bot_dof))'*t2 - stress_t(top_nod_loc,2);
-        normPt = vecnorm(Pt,2,2);
+    % Preallocate masks as logical matrices of size [ni x ngp]
+    masksP.n0 = false(ni, ngp);
+    masksP.nneg = false(ni, ngp);
+    masksP.npos = false(ni, ngp);
+    masksP.t0 = false(ni, ngp);
+    masksP.tstick = false(ni, ngp);
+    masksP.tslide = false(ni, ngp);
 
-        if (abs(Pn(i)) < tol_P) % non-smooth case 1 ---> F(maskPn0) = 0, FRI(pn0,pn0) = ... 
-            masksP.n0(i) = true;
-        elseif (Pn(i) <= -tol_P) % open ---> F(maskPnneg) = 0
-            masksP.nneg(i) = true;
-        else % not open
-            masksP.npos(i) = true;
-            if (abs(normPt(i) - phi*Pn(i)) < tol_P) % non-smooth case 2 --> they're almost the same, so just take the easiest one (?) 
-                masksP.t0(i) = true;
-            elseif (normPt(i) - phi*Pn(i) <= -tol_P) % sticking ---> FRI(...) = sth (easy term)
-                masksP.tstick(i) = true;
-            else % sliding --> FRI() = sth (difficult term)
-                masksP.tslide(i) = true;
+    for i = 1:ni
+        for gp = 1:ngp
+            normPt = norm(Pt_gp{i}(gp,:));
+
+            if (abs(Pn_gp{i}(gp)) < tol_P)
+                masksP.n0(i, gp) = true;
+            elseif (Pn_gp{i}(gp) <= -tol_P)
+                masksP.nneg(i, gp) = true;
+            else
+                masksP.npos(i, gp) = true;
+
+                if (abs(normPt - phi * Pn_gp{i}(gp)) < tol_P)
+                    masksP.t0(i, gp) = true;
+                elseif ((normPt - phi * Pn_gp{i}(gp)) <= -tol_P)
+                    masksP.tstick(i, gp) = true;
+                else
+                    masksP.tslide(i, gp) = true;
+                end
             end
         end
     end
-
 end
-
-%     if (TEST && norm(Pgamma_u) < 1e-12)
-%         warning("Pgamma_u is zero...");
-%     end

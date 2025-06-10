@@ -24,6 +24,7 @@ function [sol,iter,rnorm,conv,resvec,res] = newton_solver(f,x0,itmax,tol,maxarm,
             sol = sol + x;
         end
 
+
         rnorm = norm(res);
         if (iter == 1)
             rnorm0 = rnorm;

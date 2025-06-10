@@ -17,7 +17,8 @@ function [C_k, KKT] = cpt_KKT(ngauss,coord,topol,E, nu, ...
     for i = 1 : ni 
 
         % Compute contribution to the top face only (biased formulation)
-        [KKT11,KKT12,KKT21,KKT22] = cpt_KKTloc(ngauss, coord, topol, interfData, i, E, nu, gamma, alpha);
+        [KKT11,KKT12,KKT21,KKT22] = cpt_KKTloc(ngauss, coord, topol, interfData, ...
+            i, E, nu, gamma, alpha, masksP);
         
         top_nod = topol(interfData(i).etop,:);
         bot_nod = topol(interfData(i).ebottom,:);
@@ -53,26 +54,7 @@ function [C_k, KKT] = cpt_KKT(ngauss,coord,topol,E, nu, ...
         + sparse(KKTlist22(:,2),KKTlist22(:,1),KKTlist22(:,3),3*nn,3*nn,size(KKTlist22,1));
 
     C_k = KKT * dsol;
+
     
-    % Take the positive part
-    % map nni -> global dofs
-    all_ntop = [nodePairsData.ntop];
-    dof0neg = expand_dofs(all_ntop(~masksP.npos));
-    dof_neg = expand_dofs(all_ntop(masksP.nneg));
-    dof0 = expand_dofs(all_ntop(masksP.n0));
-    
-    C_k(dof0neg) = 0;
-%     KKT(dof_neg, :) = 0;
-%     KKT(:, dof_neg) = 0;
-    KKT(dof_neg, dof_neg) = 0;
-
-
-    % Semi-smooth Newton where Pgamma_u = 0
-    %%% e.g. take any value in the convex hull of the subdifferential, e.g.
-    %%% 0.5 of the computed value
-%     KKT(:, dof0) = 0.5*KKT(:, dof0);
-%     KKT(dof0, :) = 0.5*KKT(dof0, :);
-    KKT(dof0, dof0) = 0.5*KKT(dof0, dof0);
-
 
 end

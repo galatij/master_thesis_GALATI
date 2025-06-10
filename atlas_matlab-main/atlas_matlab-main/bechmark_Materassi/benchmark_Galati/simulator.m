@@ -153,7 +153,7 @@ function [itGlo, convAll] = ...
             cellScalarFields{2} = E;
 
             IDprint = IDprint + 1;
-            fileName = sprintf('result_%3.3i.vtk', IDprint);
+            fileName = sprintf('result_nitsche_%3.3i.vtk', IDprint);
             coordDef = coord + fac*reshape(sol,[3,nn])';
             write_vtk(fileName, iStep, coordDef, topol, interf, nodeScalarFields, ...
                       nodeFieldNames, cellScalarFields, cellFieldNames);                      

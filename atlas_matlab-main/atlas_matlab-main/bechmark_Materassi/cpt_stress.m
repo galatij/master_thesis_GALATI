@@ -23,7 +23,7 @@ function [stress] = cpt_stress(ngauss,coord,ne,topol,E,nu,sol)
                 for i3 = 1 : ngauss
                     theta = nodes(i3);
                     [Bloc,detJ] = cpt_shape(loc_coo,csi,eta,theta);
-                    loc_eps = loc_eps + Bloc*loc_sol*weights(i1)*weights(i2)*weights(i3)*detJ;
+                    loc_eps = loc_eps + D*Bloc*loc_sol*weights(i1)*weights(i2)*weights(i3)*detJ;
                     vol = vol + weights(i1)*weights(i2)*weights(i3)*detJ;
                 end
             end
